@@ -2,7 +2,7 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-from np import irr
+from numpy import irr
 import altair as alt
 
 # Load scenario assumptions
