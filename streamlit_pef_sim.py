@@ -1,9 +1,10 @@
-
 import streamlit as st
 import pandas as pd
 import numpy as np
 from numpy_financial import irr
-import altair as alt
+import plotly.graph_objects as go
+
+st.set_page_config(layout="wide")
 
 # Load scenario assumptions
 @st.cache_data
@@ -28,81 +29,67 @@ def load_assumptions():
 
 scenarios = load_assumptions()
 
-# UI Inputs
+# Layout split
 st.title("PE Fund-of-Funds Return Simulator")
-st.markdown("Simulate net returns based on commitment size, fund selection, and scenario.")
+left, right = st.columns([1, 2])
 
-commitment = st.number_input("Base Commitment (USD)", min_value=1_000_000, step=100_000, value=10_000_000)
-step_up = st.number_input("Commitment Step-Up per Fund (%)", min_value=0.0, value=10.0) / 100
-scenario_choice = st.selectbox("Scenario", ["Top Quartile", "Median Quartile", "Bottom Quartile"])
-num_funds = 10
-fund_years = [2024 + 2*i for i in range(num_funds)]
-fund_select = st.multiselect("Select Funds to Invest In", options=[f"Fund {i+1} (Start: {y})" for i,y in enumerate(fund_years)], default=["Fund 1 (Start: 2024)"])
+with left:
+    st.subheader("Strategy Inputs")
+    commitment = st.number_input("Initial Commitment (USD)", min_value=1_000_000, step=100_000, value=10_000_000)
+    step_up = st.slider("Commitment Step-Up (%)", 0.0, 50.0, 10.0) / 100
+    num_funds = st.slider("Number of Funds", 1, 15, 10)
+    pacing = st.slider("Fund Pacing (Years)", 1, 5, 2)
+    scenario_choice = st.radio("Performance Scenario", ["Top Quartile", "Median Quartile", "Bottom Quartile"], index=1)
 
-# Map selected funds
-selected_funds = [int(s.split()[1]) for s in fund_select]
+# Cashflow simulation
+scenario = scenarios[scenario_choice]
+horizon = (num_funds - 1) * pacing + 13
+annual_cf = np.zeros(horizon)
 
-# Generate cashflows
-def simulate_cashflows():
-    scenario = scenarios[scenario_choice]
-    horizon = 30
-    annual_cf = np.zeros(horizon)
+for i in range(num_funds):
+    start_year = i * pacing
+    fund_commitment = commitment * ((1 + step_up) ** i)
+    for j in range(13):
+        year = start_year + j
+        if year >= horizon:
+            break
+        calls = scenario.loc["Capital Calls", f"Year {j+1}"]
+        dists = scenario.loc["Distributions", f"Year {j+1}"]
+        nav = scenario.loc["Residual NAV", f"Year {j+1}"]
+        annual_cf[year] += fund_commitment * (dists + nav + calls)
 
-    for i, fund_id in enumerate(selected_funds):
-        start_year = 2 * (fund_id - 1)
-        fund_commitment = commitment * ((1 + step_up) ** (fund_id - 1))
-        for j in range(13):
-            year = start_year + j
-            if year >= horizon:
-                break
-            calls = scenario.loc["Capital Calls", f"Year {j+1}"]
-            dists = scenario.loc["Distributions", f"Year {j+1}"]
-            nav = scenario.loc["Residual NAV", f"Year {j+1}"]
-            annual_cf[year] += fund_commitment * (dists + nav + calls)
+cum_cf = np.cumsum(annual_cf)
 
-    return annual_cf
-
-cashflows = simulate_cashflows()
-cum_cf = np.cumsum(cashflows)
-
-# Compute Metrics
-paid_in = -np.sum(cashflows[cashflows < 0])
-dists_nav = np.sum(cashflows[cashflows > 0])
+# Metrics
+paid_in = -np.sum(annual_cf[annual_cf < 0])
+dists_nav = np.sum(annual_cf[annual_cf > 0])
 tvpi = dists_nav / paid_in if paid_in != 0 else np.nan
-dpi = np.sum(cashflows[cashflows > 0]) / paid_in if paid_in != 0 else np.nan
-net_irr = irr(cashflows)
-max_net_out = np.min(np.cumsum(cashflows))
+dpi = np.sum(annual_cf[annual_cf > 0]) / paid_in if paid_in != 0 else np.nan
+net_irr = irr(annual_cf)
+max_net_out = np.min(np.cumsum(annual_cf))
 
-# Output Metrics
-st.header("Results")
-col1, col2, col3 = st.columns(3)
-col1.metric("Net TVPI", f"{tvpi:.2f}")
-col2.metric("Net DPI", f"{dpi:.2f}")
-col3.metric("Net IRR", f"{net_irr*100:.2f}%")
-st.metric("Max Net Cash Out (Bottom of J Curve)", f"${max_net_out:,.0f}")
+# Output panel
+with right:
+    col1, col2, col3, col4 = st.columns(4)
+    col1.metric("Net TVPI", f"{tvpi:.2f}x")
+    col2.metric("Net DPI", f"{dpi:.2f}x")
+    col3.metric("Net IRR", f"{net_irr * 100:.1f}%")
+    col4.metric("Max Net Cash Out", f"${max_net_out:,.0f}")
 
-# Charts
-df_chart = pd.DataFrame({
-    "Year": list(range(1, len(cashflows)+1)),
-    "Capital Calls": [c if c < 0 else 0 for c in cashflows],
-    "Distributions": [c if c > 0 else 0 for c in cashflows],
-    "Net Cash Flow": cashflows,
-    "Cumulative Net CF": cum_cf
-})
+    st.subheader("Portfolio Cash Flow Analysis")
+    df_chart = pd.DataFrame({
+        "Year": list(range(1, len(annual_cf)+1)),
+        "Capital Calls": [c if c < 0 else 0 for c in annual_cf],
+        "Distributions": [c if c > 0 else 0 for c in annual_cf],
+        "Net Cash Flow": annual_cf,
+        "Cumulative Net CF": cum_cf
+    })
 
-st.subheader("Cash Flow Charts")
-line = alt.Chart(df_chart.reset_index()).transform_fold(
-    ["Capital Calls", "Distributions", "Net Cash Flow"]
-).mark_bar().encode(
-    x="Year:O",
-    y="value:Q",
-    color="key:N"
-).properties(height=300)
+    fig = go.Figure()
+    fig.add_bar(x=df_chart["Year"], y=df_chart["Capital Calls"], name="Capital Call", marker_color="#8B0000")
+    fig.add_bar(x=df_chart["Year"], y=df_chart["Distributions"], name="Distribution", marker_color="#006400")
+    fig.add_trace(go.Scatter(x=df_chart["Year"], y=df_chart["Net Cash Flow"], name="Annual Net Cash Flow", mode="lines+markers", line=dict(color="#FFA500", width=2)))
+    fig.add_trace(go.Scatter(x=df_chart["Year"], y=df_chart["Cumulative Net CF"], name="Cumulative Net CF (J-Curve)", mode="lines", line=dict(color="#1E90FF", width=3)))
+    fig.update_layout(barmode="relative", xaxis_title="Year", yaxis_title="Cash Flow (USD)", height=500, plot_bgcolor="white")
 
-cum_line = alt.Chart(df_chart).mark_line().encode(
-    x="Year",
-    y="Cumulative Net CF",
-).properties(height=300)
-
-st.altair_chart(line, use_container_width=True)
-st.altair_chart(cum_line, use_container_width=True)
+    st.plotly_chart(fig, use_container_width=True)
