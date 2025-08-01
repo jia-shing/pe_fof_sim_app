@@ -2,7 +2,7 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-from numpy_financial import irr
+from np import irr
 import altair as alt
 
 # Load scenario assumptions
