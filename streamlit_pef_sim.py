@@ -31,19 +31,25 @@ scenarios = load_assumptions()
 # Style definitions
 st.markdown("""
     <style>
+    .metric-container {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        gap: 16px;
+        margin: 0.5rem 0 1rem 0;
+    }
     .metric-box {
         background-color: #f8f9fa;
         border-radius: 12px;
         padding: 16px;
-        width: 180px;
-        flex: 0 0 auto;
+        flex: 1;
         text-align: center;
         box-shadow: 0 1px 3px rgba(0,0,0,0.05);
     }
     .metric-label {
-        font-size: 0.85rem;
+        font-size: 1rem;
         color: #6c757d;
-        margin-bottom: 5px;
+        margin-bottom: 6px;
     }
     .metric-value {
         font-size: 1.4rem;
@@ -109,7 +115,7 @@ with col2:
     st.subheader("Illustrative Cashflows and Net Returns to Investor")
 
     metrics_html = f"""
-    <div style='display: flex; flex-direction: row; gap: 12px; align-items: flex-start; margin-top: 0; margin-bottom: 1rem;'>
+    <div class='metric-container'>
       <div class='metric-box' title='Total Value to Paid-In Capital'>
         <div class='metric-label'>Net TVPI</div>
         <div class='metric-value'>{tvpi:.2f}x</div>
