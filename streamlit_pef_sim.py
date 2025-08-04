@@ -122,10 +122,22 @@ residual_total = residual_navs[-1]
 tvpi = (total_dists + residual_total) / paid_in if paid_in else np.nan
 dpi = total_dists / paid_in if paid_in else np.nan
 net_irr = irr(net_cf)
+
 max_net_out = cum_cf.min()
-abs_max_net_out = abs(max_net_out)
-cash_on_cash = (cum_cf[-1] + abs_max_net_out) / abs_max_net_out if paid_in else np.nan
-net_out_pct = (abs(max_net_out) / commitment) * 100
+max_net_out_year = np.argmin(cum_cf)
+def get_committed_capital_until_year(max_year_index, base_commitment, step_up, num_funds):
+    total_commit = 0
+    for i in range(num_funds):
+        fund_start_year = i * 2
+        if fund_start_year > max_year_index:
+            break
+        total_commit += base_commitment * ((1 + step_up) ** i)
+    return total_commit
+commit_until_max_out = get_committed_capital_until_year(max_net_out_year, commitment, step_up, num_funds)
+net_out_pct = (abs(max_net_out) / commit_until_max_out) * 100 if commit_until_max_out else np.nan
+
+cash_on_cash = (cum_cf[-1] + abs(max_net_out)) / abs(max_net_out) if paid_in else np.nan
+
 
 # Optional secondary scenario
 if enable_compare:
