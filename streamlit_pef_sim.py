@@ -107,7 +107,8 @@ tvpi = (total_dists + residual_total) / paid_in if paid_in else np.nan
 dpi = total_dists / paid_in if paid_in else np.nan
 net_irr = irr(net_cf)
 max_net_out = cum_cf.min()
-cash_on_cash = (paid_in + max_net_out) / paid_in if paid_in else np.nan
+abs_max_net_out = abs(max_net_out)
+cash_on_cash = (paid_in + abs_max_net_out) / paid_in if paid_in else np.nan
 net_out_pct = (abs(max_net_out) / commitment) * 100
 
 with right:
