@@ -28,59 +28,65 @@ def load_assumptions():
 
 scenarios = load_assumptions()
 
+# Style for metrics
 st.markdown("""
     <style>
-    .metric-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-        gap: 16px;
-        margin-top: 10px;
-        margin-bottom: 0;
-    }
-    .metric-tile {
+    .metric-box {
         background-color: #f8f9fa;
-        border-radius: 10px;
+        border-radius: 12px;
         padding: 16px;
-        text-align: left;
-        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
-    .metric-tile:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        width: 180px;
+        display: inline-block;
+        margin: 10px;
+        text-align: center;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
     }
     .metric-label {
-        font-size: 0.9rem;
-        font-weight: 500;
+        font-size: 0.85rem;
         color: #6c757d;
-        margin-bottom: 6px;
+        margin-bottom: 5px;
     }
     .metric-value {
-        font-size: 1.3rem;
-        font-weight: 700;
+        font-size: 1.4rem;
+        font-weight: bold;
         color: #3f51b5;
-        text-align: right;
     }
-    .form-container {
+    .fixed-layout {
+        display: flex;
+        flex-direction: row;
+        gap: 20px;
+        align-items: flex-start;
+    }
+    .left-col {
+        width: 25%;
+        min-width: 280px;
+    }
+    .right-col {
+        width: 75%;
+    }
+    .metrics-container {
         display: flex;
         flex-wrap: wrap;
-        justify-content: space-between;
-        align-items: flex-start;
-        gap: 40px;
-        margin-bottom: 15px;
+        margin-bottom: 20px;
     }
     </style>
 """, unsafe_allow_html=True)
 
-col1, col2 = st.columns([1, 2], gap="large")
+st.markdown("<div class='fixed-layout'>", unsafe_allow_html=True)
 
-with col1:
-    st.subheader("1. Strategy Inputs")
-    commitment_millions = st.number_input("Initial Commitment (USD millions)", min_value=1, max_value=2000, value=100, step=5, format="%d")
-    commitment = commitment_millions * 1_000_000
-    step_up = st.number_input("Commitment Step-Up (%)", min_value=0, max_value=50, value=0, step=1) / 100
-    num_funds = st.slider("Number of Funds", 1, 15, 1)
-    scenario_choice = st.radio("Performance Scenario", ["Top Quartile", "Median Quartile", "Bottom Quartile"], index=0, horizontal=True)
+# Left Column - Inputs
+st.markdown("<div class='left-col'>", unsafe_allow_html=True)
+st.subheader("Commitment Inputs")
+commitment_millions = st.number_input("Initial Commitment (USD millions)", min_value=1, max_value=2000, value=100, step=5, format="%d")
+commitment = commitment_millions * 1_000_000
+step_up = st.number_input("Commitment Step-Up (%)", min_value=0, max_value=50, value=0, step=1) / 100
+num_funds = st.slider("Number of Funds", 1, 15, 1)
+scenario_choice = st.radio("Performance Scenario", ["Top Quartile", "Median Quartile", "Bottom Quartile"], index=0, horizontal=False)
+st.markdown("</div>", unsafe_allow_html=True)
+
+# Right Column - Outputs
+st.markdown("<div class='right-col'>", unsafe_allow_html=True)
+st.subheader("Key Metrics")
 
 scenario = scenarios[scenario_choice]
 horizon = (num_funds - 1) * 2 + 13
@@ -106,7 +112,6 @@ for i in range(num_funds):
 
 cum_cf = np.cumsum(net_cf)
 
-# Metrics
 paid_in = -np.sum(capital_calls)
 total_dists = np.sum(distributions)
 residual_total = residual_navs[-1]
@@ -118,39 +123,34 @@ abs_max_net_out = abs(max_net_out)
 cash_on_cash = (cum_cf[-1] + abs_max_net_out) / abs_max_net_out if paid_in else np.nan
 net_out_pct = (abs(max_net_out) / commitment) * 100
 
-with col2:
-    st.subheader("2. Key Metrics")
-    st.markdown("<div class='metric-grid'>", unsafe_allow_html=True)
-    st.markdown(f"""
-        <div class='metric-tile'>
-            <div class='metric-label'>Net TVPI</div>
-            <div class='metric-value'>{tvpi:.2f}x</div>
-        </div>
-        <div class='metric-tile'>
-            <div class='metric-label'>Net DPI</div>
-            <div class='metric-value'>{dpi:.2f}x</div>
-        </div>
-        <div class='metric-tile'>
-            <div class='metric-label'>Net IRR</div>
-            <div class='metric-value'>{net_irr * 100:.1f}%</div>
-        </div>
-        <div class='metric-tile'>
-            <div class='metric-label'>Cash-on-Cash Multiple</div>
-            <div class='metric-value'>{cash_on_cash:.2f}x</div>
-        </div>
-        <div class='metric-tile'>
-            <div class='metric-label'>Max Net Cash Out</div>
-            <div class='metric-value'>-${abs(max_net_out)/1e6:.1f}M ({net_out_pct:.0f}%)</div>
-        </div>
-    """, unsafe_allow_html=True)
-    st.markdown("</div>", unsafe_allow_html=True)
-
+# Metrics Display
+st.markdown("<div class='metrics-container'>", unsafe_allow_html=True)
+st.markdown(f"""
+<div class='metric-box' title='Total Value to Paid-In Capital'>
+    <div class='metric-label'>Net TVPI</div>
+    <div class='metric-value'>{tvpi:.2f}x</div>
+</div>
+<div class='metric-box' title='Distributions to Paid-In Capital'>
+    <div class='metric-label'>Net DPI</div>
+    <div class='metric-value'>{dpi:.2f}x</div>
+</div>
+<div class='metric-box' title='Internal Rate of Return (IRR)'>
+    <div class='metric-label'>Net IRR</div>
+    <div class='metric-value'>{net_irr * 100:.1f}%</div>
+</div>
+<div class='metric-box' title='Cumulative Net Cash In vs Out'>
+    <div class='metric-label'>Cash-on-Cash Multiple</div>
+    <div class='metric-value'>{cash_on_cash:.2f}x</div>
+</div>
+<div class='metric-box' title='Maximum Net Capital Outlay'>
+    <div class='metric-label'>Max Net Cash Out</div>
+    <div class='metric-value'>-${abs(max_net_out)/1e6:.1f}M ({net_out_pct:.0f}%)</div>
+</div>
+""", unsafe_allow_html=True)
 st.markdown("</div>", unsafe_allow_html=True)
 
-st.markdown("---")
+# Graph Section
 st.subheader("Illustrative Cashflows and Net Returns to Investor")
-
-# Chart Section
 df_chart = pd.DataFrame({
     "Year": list(range(1, len(net_cf)+1)),
     "Capital Calls": capital_calls,
@@ -169,12 +169,14 @@ fig.update_layout(
     xaxis_title="Year",
     yaxis_title="Cash Flow (USD Millions)",
     yaxis_tickformat="$,.0f",
-    yaxis=dict(tickprefix="$", tickformat=".1s", showgrid=True),
+    yaxis=dict(tickprefix="$", tickformat=",.0f", showgrid=True),
+    legend=dict(x=0.01, y=0.98),
     height=500,
     plot_bgcolor="white",
     margin=dict(l=20, r=20, t=20, b=20),
     hovermode="x unified"
 )
-st.plotly_chart(fig, use_container_width=True)
 
+st.plotly_chart(fig, use_container_width=True)
 st.download_button("Download Cash Flow CSV", df_chart.to_csv(index=False), file_name="cashflows.csv")
+st.markdown("</div></div>", unsafe_allow_html=True)  # Close right and full layout
