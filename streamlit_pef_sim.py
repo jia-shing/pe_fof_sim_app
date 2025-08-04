@@ -28,41 +28,50 @@ def load_assumptions():
 
 scenarios = load_assumptions()
 
+# Custom style
 st.markdown("""
     <style>
-    .metric-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-        gap: 16px;
-        margin-top: 10px;
-        margin-bottom: 0;
+    .custom-title {
+        font-size: 2.2rem;
+        font-weight: 600;
+        color: #212529;
+        margin-bottom: 1rem;
     }
-    .metric-tile {
+    .metric-box-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 20px;
+        margin-top: 10px;
+        margin-bottom: 30px;
+    }
+    .metric-box-grid-2 {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+    .metric-box {
         background-color: #f8f9fa;
         border-radius: 12px;
-        padding: 18px 20px;
-        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
-    .metric-tile:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        padding: 24px;
+        text-align: center;
     }
     .metric-label {
-        font-size: 0.9rem;
+        font-size: 0.95rem;
         font-weight: 500;
         color: #6c757d;
-        text-align: left;
+        margin-bottom: 6px;
     }
     .metric-value {
-        font-size: 1.4rem;
-        font-weight: 700;
+        font-size: 1.425rem;
+        font-weight: bold;
         color: #3f51b5;
-        text-align: right;
-        margin-top: 5px;
     }
     </style>
 """, unsafe_allow_html=True)
+
+# Page Title
+st.markdown("<div class='custom-title'>PE Fund-of-Funds Return Simulator</div>", unsafe_allow_html=True)
 
 col1, col2 = st.columns([1, 2], gap="large")
 
@@ -98,6 +107,7 @@ for i in range(num_funds):
 
 cum_cf = np.cumsum(net_cf)
 
+# Metrics
 paid_in = -np.sum(capital_calls)
 total_dists = np.sum(distributions)
 residual_total = residual_navs[-1]
@@ -111,31 +121,37 @@ net_out_pct = (abs(max_net_out) / commitment) * 100
 
 with col2:
     st.subheader("Key Metrics")
-    st.markdown("<div class='metric-grid'>", unsafe_allow_html=True)
+    st.markdown("<div class='metric-box-grid'>", unsafe_allow_html=True)
     st.markdown(f"""
-        <div class='metric-tile'>
+        <div class='metric-box'>
             <div class='metric-label'>Net TVPI</div>
             <div class='metric-value'>{tvpi:.2f}x</div>
         </div>
-        <div class='metric-tile'>
+        <div class='metric-box'>
             <div class='metric-label'>Net DPI</div>
             <div class='metric-value'>{dpi:.2f}x</div>
         </div>
-        <div class='metric-tile'>
+        <div class='metric-box'>
             <div class='metric-label'>Net IRR</div>
             <div class='metric-value'>{net_irr * 100:.1f}%</div>
         </div>
-        <div class='metric-tile'>
+    """, unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    st.markdown("<div class='metric-box-grid-2'>", unsafe_allow_html=True)
+    st.markdown(f"""
+        <div class='metric-box'>
             <div class='metric-label'>Cash-on-Cash Multiple</div>
             <div class='metric-value'>{cash_on_cash:.2f}x</div>
         </div>
-        <div class='metric-tile'>
+        <div class='metric-box'>
             <div class='metric-label'>Max Net Cash Out</div>
             <div class='metric-value'>-${abs(max_net_out)/1e6:.1f}M ({net_out_pct:.0f}%)</div>
         </div>
     """, unsafe_allow_html=True)
     st.markdown("</div>", unsafe_allow_html=True)
 
+# Chart Section
 st.markdown("---")
 st.subheader("Illustrative Cashflows and Net Returns to Investor")
 
