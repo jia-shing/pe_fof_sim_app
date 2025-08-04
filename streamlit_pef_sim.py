@@ -71,14 +71,14 @@ for i in range(num_funds):
             break
         call_amt = scenario.loc["Capital Calls", f"Year {j+1}"] * fund_commitment
         dist_amt = scenario.loc["Distributions", f"Year {j+1}"] * fund_commitment
-        capital_calls[year] += -call_amt
+        capital_calls[year] += call_amt
         distributions[year] += dist_amt
         net_cf[year] += dist_amt - call_amt
 
 cum_cf = np.cumsum(net_cf)
 
 # Metrics
-paid_in = -np.sum(capital_calls[capital_calls < 0])
+paid_in = np.sum(capital_calls)
 total_dists = np.sum(distributions)
 tvpi = total_dists / paid_in if paid_in else np.nan
 dpi = total_dists / paid_in if paid_in else np.nan
