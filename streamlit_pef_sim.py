@@ -28,50 +28,43 @@ def load_assumptions():
 
 scenarios = load_assumptions()
 
-# Custom style
 st.markdown("""
     <style>
-    .custom-title {
-        font-size: 2.2rem;
-        font-weight: 600;
-        color: #212529;
-        margin-bottom: 1rem;
+    .main-title {
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
     }
-    .metric-box-grid {
+    .metric-wrapper {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
-        gap: 20px;
-        margin-top: 10px;
-        margin-bottom: 30px;
+        gap: 16px;
+        margin-bottom: 20px;
     }
-    .metric-box-grid-2 {
+    .metric-wrapper-bottom {
         display: grid;
         grid-template-columns: repeat(2, 1fr);
-        gap: 20px;
+        gap: 16px;
         margin-bottom: 30px;
     }
     .metric-box {
         background-color: #f8f9fa;
         border-radius: 12px;
-        padding: 24px;
+        padding: 18px;
         text-align: center;
     }
     .metric-label {
-        font-size: 0.95rem;
-        font-weight: 500;
+        font-size: 0.9rem;
         color: #6c757d;
-        margin-bottom: 6px;
+        margin-bottom: 4px;
     }
     .metric-value {
-        font-size: 1.425rem;
+        font-size: 1.35rem;
         font-weight: bold;
         color: #3f51b5;
     }
     </style>
 """, unsafe_allow_html=True)
-
-# Page Title
-st.markdown("<div class='custom-title'>PE Fund-of-Funds Return Simulator</div>", unsafe_allow_html=True)
 
 col1, col2 = st.columns([1, 2], gap="large")
 
@@ -120,8 +113,8 @@ cash_on_cash = (cum_cf[-1] + abs_max_net_out) / abs_max_net_out if paid_in else 
 net_out_pct = (abs(max_net_out) / commitment) * 100
 
 with col2:
-    st.subheader("Key Metrics")
-    st.markdown("<div class='metric-box-grid'>", unsafe_allow_html=True)
+    st.markdown("<div class='main-title'>PE Fund-of-Funds Return Simulator</div>", unsafe_allow_html=True)
+    st.markdown("<div class='metric-wrapper'>", unsafe_allow_html=True)
     st.markdown(f"""
         <div class='metric-box'>
             <div class='metric-label'>Net TVPI</div>
@@ -138,7 +131,7 @@ with col2:
     """, unsafe_allow_html=True)
     st.markdown("</div>", unsafe_allow_html=True)
 
-    st.markdown("<div class='metric-box-grid-2'>", unsafe_allow_html=True)
+    st.markdown("<div class='metric-wrapper-bottom'>", unsafe_allow_html=True)
     st.markdown(f"""
         <div class='metric-box'>
             <div class='metric-label'>Cash-on-Cash Multiple</div>
@@ -151,10 +144,10 @@ with col2:
     """, unsafe_allow_html=True)
     st.markdown("</div>", unsafe_allow_html=True)
 
-# Chart Section
 st.markdown("---")
 st.subheader("Illustrative Cashflows and Net Returns to Investor")
 
+# Chart Section
 df_chart = pd.DataFrame({
     "Year": list(range(1, len(net_cf)+1)),
     "Capital Calls": capital_calls,
