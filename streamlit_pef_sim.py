@@ -58,7 +58,8 @@ with left:
 # Calculate cashflows
 scenario = scenarios[scenario_choice]
 horizon = (num_funds - 1) * 2 + 13
-annual_cf = np.zeros(horizon)
+capital_calls = np.zeros(horizon)
+distributions = np.zeros(horizon)
 net_cf = np.zeros(horizon)
 
 for i in range(num_funds):
@@ -68,18 +69,19 @@ for i in range(num_funds):
         year = start_year + j
         if year >= horizon:
             break
-        calls = scenario.loc["Capital Calls", f"Year {j+1}"] * fund_commitment
-        dists = scenario.loc["Distributions", f"Year {j+1}"] * fund_commitment
-        annual_cf[year] += -calls
-        net_cf[year] += dists - calls
+        call_amt = scenario.loc["Capital Calls", f"Year {j+1}"] * fund_commitment
+        dist_amt = scenario.loc["Distributions", f"Year {j+1}"] * fund_commitment
+        capital_calls[year] += -call_amt
+        distributions[year] += dist_amt
+        net_cf[year] += dist_amt - call_amt
 
 cum_cf = np.cumsum(net_cf)
 
 # Metrics
-paid_in = -np.sum(annual_cf[annual_cf < 0])
-dists_total = np.sum(net_cf[net_cf > 0])
-tvpi = dists_total / paid_in if paid_in else np.nan
-dpi = dists_total / paid_in if paid_in else np.nan
+paid_in = -np.sum(capital_calls[capital_calls < 0])
+total_dists = np.sum(distributions)
+tvpi = total_dists / paid_in if paid_in else np.nan
+dpi = total_dists / paid_in if paid_in else np.nan
 net_irr = irr(net_cf)
 max_net_out = np.min(cum_cf)
 net_cash_moic = (paid_in + cum_cf[-1]) / paid_in if paid_in else np.nan
@@ -98,12 +100,12 @@ with right:
 
     st.subheader("Portfolio Cash Flow Analysis")
     df_chart = pd.DataFrame({
-        "Year": list(range(1, len(annual_cf)+1)),
-        "Capital Calls": annual_cf,
+        "Year": list(range(1, len(net_cf)+1)),
+        "Capital Calls": capital_calls,
+        "Distributions": distributions,
         "Net Cash Flow": net_cf,
         "Cumulative Net CF": cum_cf
     })
-    df_chart["Distributions"] = df_chart["Net Cash Flow"] - df_chart["Capital Calls"]
 
     fig = go.Figure()
     fig.add_bar(x=df_chart["Year"], y=df_chart["Capital Calls"], name="Capital Call", marker_color="#8B0000")
