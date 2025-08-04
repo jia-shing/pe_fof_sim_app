@@ -70,6 +70,14 @@ st.markdown("""
     <h1 style='font-size: 2.2rem; margin-bottom: 1.5rem;'>PE Fund-of-Funds Return Simulator</h1>
 """, unsafe_allow_html=True)
 
+scenario = scenarios[scenario_choice]
+horizon = (num_funds - 1) * 2 + 13
+capital_calls = np.zeros(horizon)
+distributions = np.zeros(horizon)
+residual_navs = np.zeros(horizon)
+net_cf = np.zeros(horizon)
+
+
 col1, col2 = st.columns([1, 3], gap="large")
 
 with col1:
@@ -79,6 +87,7 @@ with col1:
     step_up = st.number_input("Commitment Step-Up (%)", min_value=0, max_value=50, value=0, step=1) / 100
     num_funds = st.slider("Number of Funds", 1, 15, 1)
     scenario_choice = st.radio("Performance Scenario", ["Top Quartile", "Median Quartile", "Bottom Quartile"], index=0, horizontal=False)
+    year_range = st.slider("Display Year Range", min_value=1, max_value=horizon, value=(1, horizon), key="display_year_range_slider")
     use_point_in_time = st.toggle("Show Point-in-Time Metrics")
     enable_compare = st.checkbox("Enable Scenario Comparison")
 
@@ -90,13 +99,6 @@ with col1:
         step_up_2 = st.number_input("Comparison Step-Up (%)", min_value=0, max_value=50, value=0, step=1, key="step2") / 100
         num_funds_2 = st.slider("Comparison Number of Funds", 1, 15, 1, key="fund2")
         scenario_choice_2 = st.radio("Comparison Scenario", ["Top Quartile", "Median Quartile", "Bottom Quartile"], index=1, horizontal=False, key="scen2")
-
-scenario = scenarios[scenario_choice]
-horizon = (num_funds - 1) * 2 + 13
-capital_calls = np.zeros(horizon)
-distributions = np.zeros(horizon)
-residual_navs = np.zeros(horizon)
-net_cf = np.zeros(horizon)
 
 for i in range(num_funds):
     start_year = i * 2
@@ -113,10 +115,9 @@ for i in range(num_funds):
         residual_navs[year] += nav_amt
         net_cf[year] += call_amt + dist_amt
 
-min_year = 1
-max_year = horizon
-year_range = st.slider("Display Year Range", min_value=1, max_value=max_year, value=(1, max_year), key="display_year_range_slider")
 end_index = year_range[1]
+range_mask = np.arange(horizon) + 1
+visible_mask = (range_mask >= year_range[0]) & (range_mask <= year_range[1])
 
 # Prepare sliced versions for point-in-time toggle
 capital_calls_visible = capital_calls[:end_index]
@@ -201,12 +202,6 @@ if enable_compare:
     cum2 = np.cumsum(net2)
     net_flow_compare = net2
 
-# Year Filter
-min_year = 1
-max_year = horizon
-year_range = st.slider("Display Year Range", min_value=1, max_value=max_year, value=(1, max_year))
-range_mask = np.arange(horizon) + 1
-visible_mask = (range_mask >= year_range[0]) & (range_mask <= year_range[1])
 
 # Right Panel – Chart and Key Metrics
 with col2:
