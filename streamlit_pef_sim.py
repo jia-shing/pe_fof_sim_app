@@ -64,15 +64,12 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Main Header
 st.markdown("""
     <h1 style='font-size: 2.2rem; margin-bottom: 1.5rem;'>PE Fund-of-Funds Return Simulator</h1>
 """, unsafe_allow_html=True)
 
-# Layout with Streamlit columns
 col1, col2 = st.columns([1, 3], gap="large")
 
-# Left Panel – Inputs
 with col1:
     st.subheader("Commitment Inputs")
     commitment_millions = st.number_input("Initial Commitment (USD millions)", min_value=1, max_value=2000, value=100, step=5, format="%d")
@@ -116,12 +113,10 @@ for i in range(num_funds):
 
 cum_cf = np.cumsum(net_cf)
 
-# Year Filter
 min_year = 1
 max_year = horizon
-year_range = st.slider("Display Year Range", min_value=1, max_value=max_year, value=(1, max_year))
+year_range = st.slider("Display Year Range", min_value=1, max_value=max_year, value=(1, max_year), key="display_year_range_slider")
 
-# Slice Data for Point-in-Time
 end_index = year_range[1]
 capital_calls_visible = capital_calls[:end_index]
 distributions_visible = distributions[:end_index]
@@ -138,7 +133,6 @@ def get_committed_capital_until_year(max_year_index, base_commitment, step_up, n
         total_commit += base_commitment * ((1 + step_up) ** i)
     return total_commit
 
-# Choose which metrics to show
 if use_point_in_time:
     paid_in = -np.sum(capital_calls_visible)
     total_dists = np.sum(distributions_visible)
