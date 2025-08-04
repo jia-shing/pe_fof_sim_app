@@ -39,41 +39,53 @@ st.markdown("""
     }
     .metric-container {
         display: flex;
-        gap: 15px;
+        gap: 20px;
         flex-wrap: wrap;
+        background-color: #f5faff;
+        padding: 20px;
+        border-radius: 8px;
+        margin-top: 10px;
     }
     .metric-box {
-        background: #f5f7fa;
-        border-radius: 8px;
-        padding: 20px;
         flex: 1 1 220px;
         text-align: center;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
     .metric-title {
-        font-weight: 600;
-        color: #555;
-        margin-bottom: 8px;
+        font-weight: 500;
+        color: #6c757d;
+        margin-bottom: 6px;
+        font-size: 0.9rem;
     }
     .metric-value {
-        font-size: 1.6rem;
-        font-weight: bold;
-        color: #222;
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #1a1a1a;
+    }
+    .stNumberInput > div > div {
+        width: 100%;
+    }
+    hr.vertical-divider {
+        width: 1px;
+        background-color: #d8dee4;
+        margin: 0 30px;
     }
     </style>
 """, unsafe_allow_html=True)
 
 st.title("PE Fund-of-Funds Return Simulator")
 
-left, right = st.columns([1, 3])
+left, right = st.columns([1, 0.05, 2.95])
 
 with left:
     st.subheader("Strategy Inputs")
-    commitment_millions = st.number_input("Initial Commitment (USD millions)", min_value=1, max_value=2000, value=10, step=1)
+    commitment_millions = st.number_input("Initial Commitment (USD millions)", min_value=1, max_value=2000, value=100, step=5, format="%d")
     commitment = commitment_millions * 1_000_000
-    step_up = st.number_input("Commitment Step-Up (%)", min_value=0, max_value=50, value=10, step=1) / 100
-    num_funds = st.slider("Number of Funds", 1, 15, 10)
-    scenario_choice = st.radio("Performance Scenario", ["Top Quartile", "Median Quartile", "Bottom Quartile"], index=1, horizontal=True)
+    step_up = st.number_input("Commitment Step-Up (%)", min_value=0, max_value=50, value=0, step=1) / 100
+    num_funds = st.slider("Number of Funds", 1, 15, 1)
+    scenario_choice = st.radio("Performance Scenario", ["Top Quartile", "Median Quartile", "Bottom Quartile"], index=0, horizontal=True)
+
+with right:
+    st.subheader("Key Metrics")
 
 scenario = scenarios[scenario_choice]
 horizon = (num_funds - 1) * 2 + 13
@@ -112,9 +124,7 @@ cash_on_cash = (cum_cf[-1] + abs_max_net_out) / abs_max_net_out if paid_in else 
 net_out_pct = (abs(max_net_out) / commitment) * 100
 
 with right:
-    st.subheader("Key Metrics")
     st.markdown("<div class='metric-container'>", unsafe_allow_html=True)
-
     st.markdown(f"""
         <div class='metric-box'>
             <div class='metric-title'>Net TVPI</div>
@@ -137,10 +147,11 @@ with right:
             <div class='metric-value'>-${abs(max_net_out)/1e6:.1f}M ({net_out_pct:.0f}%)</div>
         </div>
     """, unsafe_allow_html=True)
-
     st.markdown("</div>", unsafe_allow_html=True)
+
     st.markdown("---")
-    st.subheader("Portfolio Cash Flow Analysis")
+    st.subheader("Illustrative Cashflows and Net Returns to Investor")
+
     df_chart = pd.DataFrame({
         "Year": list(range(1, len(net_cf)+1)),
         "Capital Calls": capital_calls,
@@ -159,10 +170,11 @@ with right:
         xaxis_title="Year",
         yaxis_title="Cash Flow (USD Millions)",
         yaxis_tickformat="$,.0f",
-        yaxis=dict(tickprefix="$", tickformat=".1s"),
+        yaxis=dict(tickprefix="$", tickformat=".1s", showgrid=True),
         height=500,
         plot_bgcolor="white",
-        margin=dict(l=20, r=20, t=20, b=20)
+        margin=dict(l=20, r=20, t=20, b=20),
+        hovermode="x unified"
     )
     st.plotly_chart(fig, use_container_width=True)
 
