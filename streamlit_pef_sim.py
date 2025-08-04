@@ -64,12 +64,15 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
+# Main Header
 st.markdown("""
     <h1 style='font-size: 2.2rem; margin-bottom: 1.5rem;'>PE Fund-of-Funds Return Simulator</h1>
 """, unsafe_allow_html=True)
 
+# Layout with Streamlit columns
 col1, col2 = st.columns([1, 3], gap="large")
 
+# Left Panel – Inputs
 with col1:
     st.subheader("Commitment Inputs")
     commitment_millions = st.number_input("Initial Commitment (USD millions)", min_value=1, max_value=2000, value=100, step=5, format="%d")
@@ -78,7 +81,7 @@ with col1:
     num_funds = st.slider("Number of Funds", 1, 15, 1)
     scenario_choice = st.radio("Performance Scenario", ["Top Quartile", "Median Quartile", "Bottom Quartile"], index=0, horizontal=False)
     enable_compare = st.checkbox("Enable Scenario Comparison")
-    toggle_point_in_time = st.checkbox("Show Point-in-Time Metrics (based on year range)", value=True, key="point_toggle")
+    use_point_in_time = st.toggle("Show Point-in-Time Metrics")
 
     if enable_compare:
         st.markdown("<hr class='divider'>", unsafe_allow_html=True)
@@ -88,8 +91,6 @@ with col1:
         step_up_2 = st.number_input("Comparison Step-Up (%)", min_value=0, max_value=50, value=0, step=1, key="step2") / 100
         num_funds_2 = st.slider("Comparison Number of Funds", 1, 15, 1, key="fund2")
         scenario_choice_2 = st.radio("Comparison Scenario", ["Top Quartile", "Median Quartile", "Bottom Quartile"], index=1, horizontal=False, key="scen2")
-
-st.markdown("<hr class='divider'>", unsafe_allow_html=True)
 
 scenario = scenarios[scenario_choice]
 horizon = (num_funds - 1) * 2 + 13
@@ -119,28 +120,14 @@ cum_cf = np.cumsum(net_cf)
 min_year = 1
 max_year = horizon
 year_range = st.slider("Display Year Range", min_value=1, max_value=max_year, value=(1, max_year))
+
+# Slice Data for Point-in-Time
 end_index = year_range[1]
-
-if toggle_point_in_time:
-    capital_calls_vis = capital_calls[:end_index]
-    distributions_vis = distributions[:end_index]
-    residual_navs_vis = np.array([0]*(end_index-1) + [residual_navs[end_index-1]]) if end_index <= len(residual_navs) else residual_navs[:end_index]
-    net_cf_vis = capital_calls_vis + distributions_vis
-    cum_cf_vis = np.cumsum(net_cf_vis)
-    paid_in = -np.sum(capital_calls_vis)
-    total_dists = np.sum(distributions_vis)
-    residual_total = residual_navs_vis[-1]
-    net_irr = irr(net_cf_vis)
-    max_net_out = cum_cf_vis.min()
-    max_net_out_year = np.argmin(cum_cf_vis)
-else:
-    paid_in = -np.sum(capital_calls)
-    total_dists = np.sum(distributions)
-    residual_total = residual_navs[-1]
-    net_irr = irr(net_cf)
-    max_net_out = cum_cf.min()
-    max_net_out_year = np.argmin(cum_cf)
-
+capital_calls_visible = capital_calls[:end_index]
+distributions_visible = distributions[:end_index]
+residual_navs_visible = np.array([0] * (end_index - 1) + [residual_navs[end_index - 1]]) if end_index <= len(residual_navs) else residual_navs[:end_index]
+net_cf_visible = capital_calls_visible + distributions_visible
+cum_cf_visible = np.cumsum(net_cf_visible)
 
 def get_committed_capital_until_year(max_year_index, base_commitment, step_up, num_funds):
     total_commit = 0
@@ -151,10 +138,32 @@ def get_committed_capital_until_year(max_year_index, base_commitment, step_up, n
         total_commit += base_commitment * ((1 + step_up) ** i)
     return total_commit
 
-commit_until_max_out = get_committed_capital_until_year(max_net_out_year, commitment, step_up, num_funds)
-net_out_pct = (abs(max_net_out) / commit_until_max_out) * 100 if commit_until_max_out else np.nan
-
-cash_on_cash = ((cum_cf_vis[-1] if toggle_point_in_time else cum_cf[-1]) + abs(max_net_out)) / abs(max_net_out) if paid_in else np.nan
+# Choose which metrics to show
+if use_point_in_time:
+    paid_in = -np.sum(capital_calls_visible)
+    total_dists = np.sum(distributions_visible)
+    residual_total = residual_navs_visible[-1]
+    net_irr = irr(net_cf_visible)
+    max_net_out = cum_cf_visible.min()
+    max_net_out_year = np.argmin(cum_cf_visible)
+    commit_until_max_out = get_committed_capital_until_year(max_net_out_year, commitment, step_up, num_funds)
+    net_out_pct = (abs(max_net_out) / commit_until_max_out) * 100 if commit_until_max_out else np.nan
+    cash_on_cash = (cum_cf_visible[-1] + abs(max_net_out)) / abs(max_net_out) if paid_in else np.nan
+    tvpi = (total_dists + residual_total) / paid_in if paid_in else np.nan
+    dpi = total_dists / paid_in if paid_in else np.nan
+else:
+    paid_in = -np.sum(capital_calls)
+    total_dists = np.sum(distributions)
+    residual_total = residual_navs[-1]
+    tvpi = (total_dists + residual_total) / paid_in if paid_in else np.nan
+    dpi = total_dists / paid_in if paid_in else np.nan
+    net_irr = irr(net_cf)
+    cum_cf = np.cumsum(net_cf)
+    max_net_out = cum_cf.min()
+    max_net_out_year = np.argmin(cum_cf)
+    commit_until_max_out = get_committed_capital_until_year(max_net_out_year, commitment, step_up, num_funds)
+    net_out_pct = (abs(max_net_out) / commit_until_max_out) * 100 if commit_until_max_out else np.nan
+    cash_on_cash = (cum_cf[-1] + abs(max_net_out)) / abs(max_net_out) if paid_in else np.nan
 
 
 # Optional secondary scenario
