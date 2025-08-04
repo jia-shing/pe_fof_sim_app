@@ -32,12 +32,13 @@ st.markdown("""
     <style>
     .metric-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
         gap: 20px;
         background-color: #f5faff;
         padding: 20px;
         border-radius: 10px;
-        margin-top: 15px;
+        margin-top: 5px;
+        margin-bottom: 0px;
     }
     .metric-tile {
         text-align: center;
@@ -52,12 +53,22 @@ st.markdown("""
         font-weight: 600;
         color: #1a1a1a;
     }
+    .form-container {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 40px;
+        margin-bottom: 20px;
+    }
     </style>
 """, unsafe_allow_html=True)
 
 st.title("PE Fund-of-Funds Return Simulator")
 
-col1, col2 = st.columns([1, 2])
+st.markdown("<div class='form-container'>", unsafe_allow_html=True)
+
+col1, col2 = st.columns([1, 2], gap="large")
 
 with col1:
     st.subheader("1. Strategy Inputs")
@@ -129,6 +140,8 @@ with col2:
         </div>
     """, unsafe_allow_html=True)
     st.markdown("</div>", unsafe_allow_html=True)
+
+st.markdown("</div>", unsafe_allow_html=True)
 
 st.markdown("---")
 st.subheader("Illustrative Cashflows and Net Returns to Investor")
