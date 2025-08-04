@@ -30,38 +30,44 @@ scenarios = load_assumptions()
 
 st.markdown("""
     <style>
-    .main-title {
-        font-size: 2rem;
-        font-weight: 700;
-        margin-bottom: 0.5rem;
-    }
-    .metric-wrapper {
+    .metric-grid {
         display: grid;
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
         gap: 16px;
-        margin-bottom: 20px;
+        margin-top: 10px;
+        margin-bottom: 0;
     }
-    .metric-wrapper-bottom {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 16px;
-        margin-bottom: 30px;
-    }
-    .metric-box {
+    .metric-tile {
         background-color: #f8f9fa;
-        border-radius: 12px;
-        padding: 18px;
-        text-align: center;
+        border-radius: 10px;
+        padding: 16px;
+        text-align: left;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .metric-tile:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
     }
     .metric-label {
         font-size: 0.9rem;
+        font-weight: 500;
         color: #6c757d;
-        margin-bottom: 4px;
+        margin-bottom: 6px;
     }
     .metric-value {
-        font-size: 1.35rem;
-        font-weight: bold;
+        font-size: 1.3rem;
+        font-weight: 700;
         color: #3f51b5;
+        text-align: right;
+    }
+    .form-container {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 40px;
+        margin-bottom: 15px;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -69,7 +75,7 @@ st.markdown("""
 col1, col2 = st.columns([1, 2], gap="large")
 
 with col1:
-    st.subheader("Strategy Inputs")
+    st.subheader("1. Strategy Inputs")
     commitment_millions = st.number_input("Initial Commitment (USD millions)", min_value=1, max_value=2000, value=100, step=5, format="%d")
     commitment = commitment_millions * 1_000_000
     step_up = st.number_input("Commitment Step-Up (%)", min_value=0, max_value=50, value=0, step=1) / 100
@@ -113,36 +119,33 @@ cash_on_cash = (cum_cf[-1] + abs_max_net_out) / abs_max_net_out if paid_in else 
 net_out_pct = (abs(max_net_out) / commitment) * 100
 
 with col2:
-    st.markdown("<div class='main-title'>PE Fund-of-Funds Return Simulator</div>", unsafe_allow_html=True)
-    st.markdown("<div class='metric-wrapper'>", unsafe_allow_html=True)
+    st.subheader("2. Key Metrics")
+    st.markdown("<div class='metric-grid'>", unsafe_allow_html=True)
     st.markdown(f"""
-        <div class='metric-box'>
+        <div class='metric-tile'>
             <div class='metric-label'>Net TVPI</div>
             <div class='metric-value'>{tvpi:.2f}x</div>
         </div>
-        <div class='metric-box'>
+        <div class='metric-tile'>
             <div class='metric-label'>Net DPI</div>
             <div class='metric-value'>{dpi:.2f}x</div>
         </div>
-        <div class='metric-box'>
+        <div class='metric-tile'>
             <div class='metric-label'>Net IRR</div>
             <div class='metric-value'>{net_irr * 100:.1f}%</div>
         </div>
-    """, unsafe_allow_html=True)
-    st.markdown("</div>", unsafe_allow_html=True)
-
-    st.markdown("<div class='metric-wrapper-bottom'>", unsafe_allow_html=True)
-    st.markdown(f"""
-        <div class='metric-box'>
+        <div class='metric-tile'>
             <div class='metric-label'>Cash-on-Cash Multiple</div>
             <div class='metric-value'>{cash_on_cash:.2f}x</div>
         </div>
-        <div class='metric-box'>
+        <div class='metric-tile'>
             <div class='metric-label'>Max Net Cash Out</div>
             <div class='metric-value'>-${abs(max_net_out)/1e6:.1f}M ({net_out_pct:.0f}%)</div>
         </div>
     """, unsafe_allow_html=True)
     st.markdown("</div>", unsafe_allow_html=True)
+
+st.markdown("</div>", unsafe_allow_html=True)
 
 st.markdown("---")
 st.subheader("Illustrative Cashflows and Net Returns to Investor")
