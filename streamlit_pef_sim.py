@@ -32,16 +32,15 @@ st.markdown("""
     <style>
     .metric-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
         gap: 16px;
         margin-top: 10px;
         margin-bottom: 0;
     }
     .metric-tile {
         background-color: #f8f9fa;
-        border-radius: 10px;
-        padding: 16px;
-        text-align: left;
+        border-radius: 12px;
+        padding: 18px 20px;
         box-shadow: 0 1px 2px rgba(0,0,0,0.05);
         transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
@@ -53,21 +52,14 @@ st.markdown("""
         font-size: 0.9rem;
         font-weight: 500;
         color: #6c757d;
-        margin-bottom: 6px;
+        text-align: left;
     }
     .metric-value {
-        font-size: 1.3rem;
+        font-size: 1.4rem;
         font-weight: 700;
         color: #3f51b5;
         text-align: right;
-    }
-    .form-container {
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: space-between;
-        align-items: flex-start;
-        gap: 40px;
-        margin-bottom: 15px;
+        margin-top: 5px;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -75,7 +67,7 @@ st.markdown("""
 col1, col2 = st.columns([1, 2], gap="large")
 
 with col1:
-    st.subheader("1. Strategy Inputs")
+    st.subheader("Strategy Inputs")
     commitment_millions = st.number_input("Initial Commitment (USD millions)", min_value=1, max_value=2000, value=100, step=5, format="%d")
     commitment = commitment_millions * 1_000_000
     step_up = st.number_input("Commitment Step-Up (%)", min_value=0, max_value=50, value=0, step=1) / 100
@@ -106,7 +98,6 @@ for i in range(num_funds):
 
 cum_cf = np.cumsum(net_cf)
 
-# Metrics
 paid_in = -np.sum(capital_calls)
 total_dists = np.sum(distributions)
 residual_total = residual_navs[-1]
@@ -119,7 +110,7 @@ cash_on_cash = (cum_cf[-1] + abs_max_net_out) / abs_max_net_out if paid_in else 
 net_out_pct = (abs(max_net_out) / commitment) * 100
 
 with col2:
-    st.subheader("2. Key Metrics")
+    st.subheader("Key Metrics")
     st.markdown("<div class='metric-grid'>", unsafe_allow_html=True)
     st.markdown(f"""
         <div class='metric-tile'>
@@ -145,12 +136,9 @@ with col2:
     """, unsafe_allow_html=True)
     st.markdown("</div>", unsafe_allow_html=True)
 
-st.markdown("</div>", unsafe_allow_html=True)
-
 st.markdown("---")
 st.subheader("Illustrative Cashflows and Net Returns to Investor")
 
-# Chart Section
 df_chart = pd.DataFrame({
     "Year": list(range(1, len(net_cf)+1)),
     "Capital Calls": capital_calls,
