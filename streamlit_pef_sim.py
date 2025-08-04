@@ -78,7 +78,7 @@ with col1:
     num_funds = st.slider("Number of Funds", 1, 15, 1)
     scenario_choice = st.radio("Performance Scenario", ["Top Quartile", "Median Quartile", "Bottom Quartile"], index=0, horizontal=False)
     enable_compare = st.checkbox("Enable Scenario Comparison")
-    toggle_point_in_time = st.checkbox("Show Point-in-Time Metrics (based on year range)", value=True)
+    toggle_point_in_time = st.checkbox("Show Point-in-Time Metrics (based on year range)", value=True, key="point_toggle")
 
     if enable_compare:
         st.markdown("<hr class='divider'>", unsafe_allow_html=True)
