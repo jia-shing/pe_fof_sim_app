@@ -161,6 +161,12 @@ commit_until_max_out = get_committed_capital_until_year(max_net_out_year, commit
 net_out_pct = (abs(max_net_out) / commit_until_max_out) * 100 if commit_until_max_out else np.nan
 cash_on_cash = (used_cum_cf[-1] + abs(max_net_out)) / abs(max_net_out) if paid_in else np.nan
 
+# For charts and tables
+range_mask = np.arange(horizon) + 1
+visible_mask = (range_mask >= year_range[0]) & (range_mask <= year_range[1])
+cum_cf = used_cum_cf  # to ensure downstream chart uses correct CF
+
+
 
 # Optional secondary scenario
 if enable_compare:
