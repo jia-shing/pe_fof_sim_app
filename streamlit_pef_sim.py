@@ -37,13 +37,28 @@ st.markdown("""
     .stSlider > div[data-baseweb="slider"] > div {
         color: navy !important;
     }
-    .metric-card {
-        border: 1px solid #e0e0e0;
-        border-radius: 6px;
-        padding: 10px;
-        margin-right: 10px;
-        background-color: #fafafa;
+    .metric-container {
+        display: flex;
+        gap: 15px;
+        flex-wrap: wrap;
+    }
+    .metric-box {
+        background: #f5f7fa;
+        border-radius: 8px;
+        padding: 20px;
+        flex: 1 1 220px;
         text-align: center;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .metric-title {
+        font-weight: 600;
+        color: #555;
+        margin-bottom: 8px;
+    }
+    .metric-value {
+        font-size: 1.6rem;
+        font-weight: bold;
+        color: #222;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -77,7 +92,7 @@ for i in range(num_funds):
         call_amt = scenario.loc["Capital Calls", f"Year {j+1}"] * fund_commitment
         dist_amt = scenario.loc["Distributions", f"Year {j+1}"] * fund_commitment
         nav_amt = scenario.loc["Residual NAV", f"Year {j+1}"] * fund_commitment
-        capital_calls[year] += call_amt  # negative value
+        capital_calls[year] += call_amt
         distributions[year] += dist_amt
         residual_navs[year] += nav_amt
         net_cf[year] += call_amt + dist_amt
@@ -87,26 +102,42 @@ cum_cf = np.cumsum(net_cf)
 # Metrics
 paid_in = -np.sum(capital_calls)
 total_dists = np.sum(distributions)
-residual_total = np.sum(residual_navs)
+residual_total = residual_navs[-1]  # Use final point-in-time NAV
 tvpi = (total_dists + residual_total) / paid_in if paid_in else np.nan
 dpi = total_dists / paid_in if paid_in else np.nan
 net_irr = irr(net_cf)
 max_net_out = cum_cf.min()
-net_cash_moic = (paid_in + cum_cf[-1]) / paid_in if paid_in else np.nan
+cash_on_cash = (paid_in + max_net_out) / paid_in if paid_in else np.nan
 net_out_pct = (abs(max_net_out) / commitment) * 100
 
 with right:
     st.subheader("Key Metrics")
-    metric_cols = st.columns(3)
-    with metric_cols[0]:
-        st.markdown(f"<div class='metric-card'><strong>Net TVPI</strong><br>{tvpi:.2f}x</div>", unsafe_allow_html=True)
-        st.markdown(f"<div class='metric-card'><strong>Net Cash MOIC</strong><br>{net_cash_moic:.2f}x</div>", unsafe_allow_html=True)
-    with metric_cols[1]:
-        st.markdown(f"<div class='metric-card'><strong>Net DPI</strong><br>{dpi:.2f}x</div>", unsafe_allow_html=True)
-        st.markdown(f"<div class='metric-card'><strong>Max Net Cash Out</strong><br>-${abs(max_net_out)/1e6:.1f}M ({net_out_pct:.0f}%)</div>", unsafe_allow_html=True)
-    with metric_cols[2]:
-        st.markdown(f"<div class='metric-card'><strong>Net IRR</strong><br>{net_irr * 100:.1f}%</div>", unsafe_allow_html=True)
+    st.markdown("<div class='metric-container'>", unsafe_allow_html=True)
 
+    st.markdown(f"""
+        <div class='metric-box'>
+            <div class='metric-title'>Net TVPI</div>
+            <div class='metric-value'>{tvpi:.2f}x</div>
+        </div>
+        <div class='metric-box'>
+            <div class='metric-title'>Net DPI</div>
+            <div class='metric-value'>{dpi:.2f}x</div>
+        </div>
+        <div class='metric-box'>
+            <div class='metric-title'>Net IRR</div>
+            <div class='metric-value'>{net_irr * 100:.1f}%</div>
+        </div>
+        <div class='metric-box'>
+            <div class='metric-title'>Cash-on-Cash Multiple</div>
+            <div class='metric-value'>{cash_on_cash:.2f}x</div>
+        </div>
+        <div class='metric-box'>
+            <div class='metric-title'>Max Net Cash Out</div>
+            <div class='metric-value'>-${abs(max_net_out)/1e6:.1f}M ({net_out_pct:.0f}%)</div>
+        </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown("</div>", unsafe_allow_html=True)
     st.markdown("---")
     st.subheader("Portfolio Cash Flow Analysis")
     df_chart = pd.DataFrame({
