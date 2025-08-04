@@ -70,13 +70,6 @@ st.markdown("""
     <h1 style='font-size: 2.2rem; margin-bottom: 1.5rem;'>PE Fund-of-Funds Return Simulator</h1>
 """, unsafe_allow_html=True)
 
-scenario = scenarios[scenario_choice]
-horizon = (num_funds - 1) * 2 + 13
-capital_calls = np.zeros(horizon)
-distributions = np.zeros(horizon)
-residual_navs = np.zeros(horizon)
-net_cf = np.zeros(horizon)
-
 
 col1, col2 = st.columns([1, 3], gap="large")
 
@@ -87,6 +80,8 @@ with col1:
     step_up = st.number_input("Commitment Step-Up (%)", min_value=0, max_value=50, value=0, step=1) / 100
     num_funds = st.slider("Number of Funds", 1, 15, 1)
     scenario_choice = st.radio("Performance Scenario", ["Top Quartile", "Median Quartile", "Bottom Quartile"], index=0, horizontal=False)
+    scenario = scenarios[scenario_choice]
+    horizon = (num_funds - 1) * 2 + 13
     year_range = st.slider("Display Year Range", min_value=1, max_value=horizon, value=(1, horizon), key="display_year_range_slider")
     use_point_in_time = st.toggle("Show Point-in-Time Metrics")
     enable_compare = st.checkbox("Enable Scenario Comparison")
@@ -99,6 +94,11 @@ with col1:
         step_up_2 = st.number_input("Comparison Step-Up (%)", min_value=0, max_value=50, value=0, step=1, key="step2") / 100
         num_funds_2 = st.slider("Comparison Number of Funds", 1, 15, 1, key="fund2")
         scenario_choice_2 = st.radio("Comparison Scenario", ["Top Quartile", "Median Quartile", "Bottom Quartile"], index=1, horizontal=False, key="scen2")
+
+capital_calls = np.zeros(horizon)
+distributions = np.zeros(horizon)
+residual_navs = np.zeros(horizon)
+net_cf = np.zeros(horizon)
 
 for i in range(num_funds):
     start_year = i * 2
@@ -142,12 +142,14 @@ if use_point_in_time:
     used_net_cf = net_cf_visible
     used_residual_navs = residual_navs_visible
     used_cum_cf = cum_cf_visible
+    
 else:
     used_capital_calls = capital_calls
     used_distributions = distributions
     used_net_cf = net_cf
     used_residual_navs = residual_navs
     used_cum_cf = np.cumsum(net_cf)
+
 
 # Final metrics
 paid_in = -np.sum(used_capital_calls)
