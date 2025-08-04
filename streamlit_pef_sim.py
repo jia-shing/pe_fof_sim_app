@@ -146,10 +146,10 @@ if enable_compare:
                 break
             call_amt2 = scenario_2.loc["Capital Calls", f"Year {j+1}"] * fund_commit
             dist_amt2 = scenario_2.loc["Distributions", f"Year {j+1}"] * fund_commit
-            cap2[year] += -call_amt2
+            cap2[year] += call_amt2
             dist2[year] += dist_amt2
             nav2[year] += scenario_2.loc["Residual NAV", f"Year {j+1}"] * fund_commit
-            net2[year] += -call_amt2 + dist_amt2
+            net2[year] += call_amt2 + dist_amt2
     cum2 = np.cumsum(net2)
     net_flow_compare = net2
 
@@ -190,8 +190,8 @@ with col2:
     """
     st.markdown(metrics_html, unsafe_allow_html=True)
 
-    capital_calls_base = np.minimum(capital_calls, cap2) if enable_compare else capital_calls
-    capital_calls_delta = (np.maximum(capital_calls, cap2) - capital_calls_base) if enable_compare else np.zeros_like(capital_calls)
+    capital_calls_base = np.maximum(capital_calls, cap2) if enable_compare else capital_calls
+    capital_calls_delta = (np.minimum(capital_calls, cap2) - capital_calls_base) if enable_compare else np.zeros_like(capital_calls)
     distributions_base = np.minimum(distributions, dist2) if enable_compare else distributions
     distributions_delta = (np.maximum(distributions, dist2) - distributions_base) if enable_compare else np.zeros_like(distributions)
 
