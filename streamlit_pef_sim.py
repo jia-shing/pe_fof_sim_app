@@ -162,9 +162,16 @@ net_out_pct = (abs(max_net_out) / commit_until_max_out) * 100 if commit_until_ma
 cash_on_cash = (used_cum_cf[-1] + abs(max_net_out)) / abs(max_net_out) if paid_in else np.nan
 
 # For charts and tables
+if use_point_in_time:
+    cum_cf_full_length = np.zeros(horizon)
+    cum_cf_full_length[:end_index] = cum_cf_visible
+    cum_cf = cum_cf_full_length
+else:
+    cum_cf = used_cum_cf
+
 range_mask = np.arange(horizon) + 1
 visible_mask = (range_mask >= year_range[0]) & (range_mask <= year_range[1])
-cum_cf = used_cum_cf  # to ensure downstream chart uses correct CF
+
 
 
 
