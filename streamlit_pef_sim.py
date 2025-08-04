@@ -36,8 +36,7 @@ st.markdown("""
         border-radius: 12px;
         padding: 16px;
         width: 180px;
-        display: inline-block;
-        margin: 10px;
+        flex: 0 0 auto;
         text-align: center;
         box-shadow: 0 1px 3px rgba(0,0,0,0.05);
     }
@@ -107,7 +106,7 @@ net_out_pct = (abs(max_net_out) / commitment) * 100
 
 # Metric Box Rendering
 metrics_html = f"""
-<div style='display: flex; flex-wrap: wrap; max-width: 600px;'>
+<div style='display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-start; margin-top: 0; max-width: 640px;'>
   <div class='metric-box' title='Total Value to Paid-In Capital'>
     <div class='metric-label'>Net TVPI</div>
     <div class='metric-value'>{tvpi:.2f}x</div>
