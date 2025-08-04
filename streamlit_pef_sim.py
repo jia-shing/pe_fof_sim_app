@@ -80,6 +80,16 @@ with col1:
     step_up = st.number_input("Commitment Step-Up (%)", min_value=0, max_value=50, value=0, step=1) / 100
     num_funds = st.slider("Number of Funds", 1, 15, 1)
     scenario_choice = st.radio("Performance Scenario", ["Top Quartile", "Median Quartile", "Bottom Quartile"], index=0, horizontal=False)
+    enable_compare = st.checkbox("Enable Scenario Comparison")
+
+    if enable_compare:
+        st.markdown("<hr class='divider'>", unsafe_allow_html=True)
+        st.subheader("Comparison Inputs")
+        commitment_millions_2 = st.number_input("Comparison Commitment (USD millions)", min_value=1, max_value=2000, value=100, step=5, key="commit2")
+        commitment_2 = commitment_millions_2 * 1_000_000
+        step_up_2 = st.number_input("Comparison Step-Up (%)", min_value=0, max_value=50, value=0, step=1, key="step2") / 100
+        num_funds_2 = st.slider("Comparison Number of Funds", 1, 15, 1, key="fund2")
+        scenario_choice_2 = st.radio("Comparison Scenario", ["Top Quartile", "Median Quartile", "Bottom Quartile"], index=1, horizontal=False, key="scen2")
 
 st.markdown("<hr class='divider'>", unsafe_allow_html=True)
 
@@ -117,6 +127,36 @@ abs_max_net_out = abs(max_net_out)
 cash_on_cash = (cum_cf[-1] + abs_max_net_out) / abs_max_net_out if paid_in else np.nan
 net_out_pct = (abs(max_net_out) / commitment) * 100
 
+# Optional secondary scenario
+if enable_compare:
+    scenario_2 = scenarios[scenario_choice_2]
+    horizon_2 = (num_funds_2 - 1) * 2 + 13
+    horizon = max(horizon, horizon_2)
+    cap2 = np.zeros(horizon)
+    dist2 = np.zeros(horizon)
+    nav2 = np.zeros(horizon)
+    net2 = np.zeros(horizon)
+
+    for i in range(num_funds_2):
+        start_year = i * 2
+        fund_commit = commitment_2 * ((1 + step_up_2) ** i)
+        for j in range(13):
+            year = start_year + j
+            if year >= horizon:
+                break
+            cap2[year] += scenario_2.loc["Capital Calls", f"Year {j+1}"] * fund_commit
+            dist2[year] += scenario_2.loc["Distributions", f"Year {j+1}"] * fund_commit
+            nav2[year] += scenario_2.loc["Residual NAV", f"Year {j+1}"] * fund_commit
+            net2[year] += cap2[year] + dist2[year]
+    cum2 = np.cumsum(net2)
+
+# Year Filter
+min_year = 1
+max_year = horizon
+year_range = st.slider("Display Year Range", min_value=1, max_value=max_year, value=(1, max_year))
+range_mask = np.arange(horizon) + 1
+visible_mask = (range_mask >= year_range[0]) & (range_mask <= year_range[1])
+
 # Right Panel – Chart and Key Metrics
 with col2:
     st.subheader("Illustrative Cashflows and Net Returns to Investor")
@@ -148,11 +188,11 @@ with col2:
     st.markdown(metrics_html, unsafe_allow_html=True)
 
     df_chart = pd.DataFrame({
-        "Year": list(range(1, len(net_cf)+1)),
-        "Capital Calls": capital_calls / 1e6,
-        "Distributions": distributions / 1e6,
-        "Net Cash Flow": net_cf / 1e6,
-        "Cumulative Net CF": cum_cf / 1e6
+        "Year": range_mask[visible_mask],
+        "Capital Calls": capital_calls[visible_mask] / 1e6,
+        "Distributions": distributions[visible_mask] / 1e6,
+        "Net Cash Flow": net_cf[visible_mask] / 1e6,
+        "Cumulative Net CF": cum_cf[visible_mask] / 1e6
     })
 
     fig = go.Figure()
@@ -160,6 +200,20 @@ with col2:
     fig.add_bar(x=df_chart["Year"], y=df_chart["Distributions"], name="Distribution (Primary)", marker_color="#006400")
     fig.add_trace(go.Scatter(x=df_chart["Year"], y=df_chart["Net Cash Flow"], name="Annual Net Cash Flow (Primary)", mode="lines+markers", line=dict(color="#FFA500", width=2)))
     fig.add_trace(go.Scatter(x=df_chart["Year"], y=df_chart["Cumulative Net CF"], name="Cumulative Net CF (Primary)", mode="lines", line=dict(color="#1E90FF", width=3)))
+
+    if enable_compare:
+        df_chart2 = pd.DataFrame({
+            "Year": range_mask[visible_mask],
+            "Capital Calls": cap2[visible_mask] / 1e6,
+            "Distributions": dist2[visible_mask] / 1e6,
+            "Net Cash Flow": net2[visible_mask] / 1e6,
+            "Cumulative Net CF": cum2[visible_mask] / 1e6
+        })
+        fig.add_bar(x=df_chart2["Year"], y=df_chart2["Capital Calls"], name="Capital Call (Compare)", marker_color="#FF9999", opacity=0.5)
+        fig.add_bar(x=df_chart2["Year"], y=df_chart2["Distributions"], name="Distribution (Compare)", marker_color="#90EE90", opacity=0.5)
+        fig.add_trace(go.Scatter(x=df_chart2["Year"], y=df_chart2["Net Cash Flow"], name="Annual Net Cash Flow (Compare)", mode="lines+markers", line=dict(color="#FFB347", width=2, dash="dot")))
+        fig.add_trace(go.Scatter(x=df_chart2["Year"], y=df_chart2["Cumulative Net CF"], name="Cumulative Net CF (Compare)", mode="lines", line=dict(color="#87CEFA", width=2, dash="dash")))
+
     fig.update_layout(
         barmode="relative",
         xaxis_title="Year",
@@ -173,24 +227,3 @@ with col2:
         hovermode="x unified"
     )
     st.plotly_chart(fig, use_container_width=True)
-
-    st.markdown("<hr class='divider'>", unsafe_allow_html=True)
-
-    with st.expander("Show Year-by-Year Table"):
-        table_df = pd.DataFrame({
-            "Year": list(range(1, len(net_cf)+1)),
-            "Capital Calls": [f"(${x/1e6:.1f})" if x < 0 else f"{x/1e6:.1f}" for x in capital_calls],
-            "Distributions": [f"(${x/1e6:.1f})" if x < 0 else f"{x/1e6:.1f}" for x in distributions],
-            "Net Cash Flow": [f"(${x/1e6:.1f})" if x < 0 else f"{x/1e6:.1f}" for x in net_cf],
-            "Cumulative Net CF": [f"(${x/1e6:.1f})" if x < 0 else f"{x/1e6:.1f}" for x in cum_cf]
-        })
-        st.dataframe(table_df, use_container_width=True)
-
-    raw_df = pd.DataFrame({
-        "Year": list(range(1, len(net_cf)+1)),
-        "Capital Calls": capital_calls,
-        "Distributions": distributions,
-        "Net Cash Flow": net_cf,
-        "Cumulative Net CF": cum_cf
-    })
-    st.download_button("Download Cash Flow CSV", raw_df.to_csv(index=False), file_name="cashflows.csv")
