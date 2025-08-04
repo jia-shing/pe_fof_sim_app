@@ -56,7 +56,7 @@ st.markdown("""
 # Layout with Streamlit columns
 col1, col2 = st.columns([1, 3], gap="large")
 
-# Left Panel – Inputs
+# Left Panel – Inputs + Metrics
 with col1:
     st.subheader("Commitment Inputs")
     commitment_millions = st.number_input("Initial Commitment (USD millions)", min_value=1, max_value=2000, value=100, step=5, format="%d")
@@ -65,11 +65,10 @@ with col1:
     num_funds = st.slider("Number of Funds", 1, 15, 1)
     scenario_choice = st.radio("Performance Scenario", ["Top Quartile", "Median Quartile", "Bottom Quartile"], index=0, horizontal=False)
 
-# Right Panel – Metrics + Graph
-with col2:
-    st.markdown("""<div style='font-size: 1.25rem; font-weight: 600; margin-bottom: 0px;'>Key Metrics</div>""", unsafe_allow_html=True)
+    # Metrics will be shown after inputs
+    st.markdown("""<div style='font-size: 1.25rem; font-weight: 600; margin-top: 24px;'>Key Metrics</div>""", unsafe_allow_html=True)
 
-    scenario = scenarios[scenario_choice]
+scenario = scenarios[scenario_choice]
 horizon = (num_funds - 1) * 2 + 13
 capital_calls = np.zeros(horizon)
 distributions = np.zeros(horizon)
@@ -92,7 +91,6 @@ for i in range(num_funds):
         net_cf[year] += call_amt + dist_amt
 
 cum_cf = np.cumsum(net_cf)
-
 paid_in = -np.sum(capital_calls)
 total_dists = np.sum(distributions)
 residual_total = residual_navs[-1]
@@ -104,7 +102,7 @@ abs_max_net_out = abs(max_net_out)
 cash_on_cash = (cum_cf[-1] + abs_max_net_out) / abs_max_net_out if paid_in else np.nan
 net_out_pct = (abs(max_net_out) / commitment) * 100
 
-# Metric Box Rendering
+# Render metrics below inputs (still in col1)
 metrics_html = f"""
 <div style='display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-start; margin-top: 0; max-width: 640px;'>
   <div class='metric-box' title='Total Value to Paid-In Capital'>
@@ -131,43 +129,42 @@ metrics_html = f"""
 """
 st.markdown(metrics_html, unsafe_allow_html=True)
 
-# Graph Section
-st.subheader("Illustrative Cashflows and Net Returns to Investor")
-df_chart = pd.DataFrame({
-    "Year": list(range(1, len(net_cf)+1)),
-    "Capital Calls": capital_calls / 1e6,
-    "Distributions": distributions / 1e6,
-    "Net Cash Flow": net_cf / 1e6,
-    "Cumulative Net CF": cum_cf / 1e6
-})
+# Right Panel – Chart
+with col2:
+    st.subheader("Illustrative Cashflows and Net Returns to Investor")
+    df_chart = pd.DataFrame({
+        "Year": list(range(1, len(net_cf)+1)),
+        "Capital Calls": capital_calls / 1e6,
+        "Distributions": distributions / 1e6,
+        "Net Cash Flow": net_cf / 1e6,
+        "Cumulative Net CF": cum_cf / 1e6
+    })
 
-fig = go.Figure()
-fig.add_bar(x=df_chart["Year"], y=df_chart["Capital Calls"], name="Capital Call", marker_color="#8B0000")
-fig.add_bar(x=df_chart["Year"], y=df_chart["Distributions"], name="Distribution", marker_color="#006400")
-fig.add_trace(go.Scatter(x=df_chart["Year"], y=df_chart["Net Cash Flow"], name="Annual Net Cash Flow", mode="lines+markers", line=dict(color="#FFA500", width=2)))
-fig.add_trace(go.Scatter(x=df_chart["Year"], y=df_chart["Cumulative Net CF"], name="Cumulative Net CF (J-Curve)", mode="lines", line=dict(color="#1E90FF", width=3)))
-fig.update_layout(
-    barmode="relative",
-    xaxis_title="Year",
-    yaxis_title="Cash Flow (USD Millions)",
-    yaxis_tickformat="$,.0f",
-    yaxis=dict(showgrid=True, gridcolor="rgba(0,0,0,0.05)", zeroline=True),
-    legend=dict(x=0.01, y=0.99),
-    height=500,
-    plot_bgcolor="white",
-    margin=dict(l=20, r=20, t=20, b=20),
-    hovermode="x unified"
-)
+    fig = go.Figure()
+    fig.add_bar(x=df_chart["Year"], y=df_chart["Capital Calls"], name="Capital Call", marker_color="#8B0000")
+    fig.add_bar(x=df_chart["Year"], y=df_chart["Distributions"], name="Distribution", marker_color="#006400")
+    fig.add_trace(go.Scatter(x=df_chart["Year"], y=df_chart["Net Cash Flow"], name="Annual Net Cash Flow", mode="lines+markers", line=dict(color="#FFA500", width=2)))
+    fig.add_trace(go.Scatter(x=df_chart["Year"], y=df_chart["Cumulative Net CF"], name="Cumulative Net CF (J-Curve)", mode="lines", line=dict(color="#1E90FF", width=3)))
+    fig.update_layout(
+        barmode="relative",
+        xaxis_title="Year",
+        yaxis_title="Cash Flow (USD Millions)",
+        yaxis_tickformat="$,.0f",
+        yaxis=dict(showgrid=True, gridcolor="rgba(0,0,0,0.05)", zeroline=True),
+        legend=dict(x=0.01, y=0.99),
+        height=500,
+        plot_bgcolor="white",
+        margin=dict(l=20, r=20, t=20, b=20),
+        hovermode="x unified"
+    )
+    st.plotly_chart(fig, use_container_width=True)
 
-st.plotly_chart(fig, use_container_width=True)
-
-# Download CSV with raw values
-raw_df = pd.DataFrame({
-    "Year": list(range(1, len(net_cf)+1)),
-    "Capital Calls": capital_calls,
-    "Distributions": distributions,
-    "Net Cash Flow": net_cf,
-    "Cumulative Net CF": cum_cf
-})
-
-st.download_button("Download Cash Flow CSV", raw_df.to_csv(index=False), file_name="cashflows.csv")
+    # Download CSV
+    raw_df = pd.DataFrame({
+        "Year": list(range(1, len(net_cf)+1)),
+        "Capital Calls": capital_calls,
+        "Distributions": distributions,
+        "Net Cash Flow": net_cf,
+        "Cumulative Net CF": cum_cf
+    })
+    st.download_button("Download Cash Flow CSV", raw_df.to_csv(index=False), file_name="cashflows.csv")
