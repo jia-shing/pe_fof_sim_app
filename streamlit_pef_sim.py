@@ -109,7 +109,7 @@ with col2:
     st.subheader("Illustrative Cashflows and Net Returns to Investor")
 
     metrics_html = f"""
-    <div style='display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-start; margin-top: 0; margin-bottom: 1rem; max-width: 700px;'>
+    <div style='display: flex; flex-direction: row; gap: 12px; align-items: flex-start; margin-top: 0; margin-bottom: 1rem;'>
       <div class='metric-box' title='Total Value to Paid-In Capital'>
         <div class='metric-label'>Net TVPI</div>
         <div class='metric-value'>{tvpi:.2f}x</div>
