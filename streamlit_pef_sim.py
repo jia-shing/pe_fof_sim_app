@@ -47,7 +47,7 @@ st.markdown("""
         box-shadow: 0 1px 3px rgba(0,0,0,0.05);
     }
     .metric-label {
-        font-size: 1rem;
+        font-size: 1.1rem;
         color: #6c757d;
         margin-bottom: 6px;
     }
@@ -187,35 +187,37 @@ with col2:
     """
     st.markdown(metrics_html, unsafe_allow_html=True)
 
+    # Comparison delta stacking for bar charts
+    capital_calls_base = np.minimum(capital_calls, cap2) if enable_compare else capital_calls
+    capital_calls_delta = (np.maximum(capital_calls, cap2) - np.minimum(capital_calls, cap2)) if enable_compare else np.zeros_like(capital_calls)
+    distributions_base = np.minimum(distributions, dist2) if enable_compare else distributions
+    distributions_delta = (np.maximum(distributions, dist2) - np.minimum(distributions, dist2)) if enable_compare else np.zeros_like(distributions)
+
     df_chart = pd.DataFrame({
         "Year": range_mask[visible_mask],
-        "Capital Calls": capital_calls[visible_mask] / 1e6,
-        "Distributions": distributions[visible_mask] / 1e6,
+        "Capital Calls": capital_calls_base[visible_mask] / 1e6,
+        "Distributions": distributions_base[visible_mask] / 1e6,
+        "Capital Calls Delta": capital_calls_delta[visible_mask] / 1e6,
+        "Distributions Delta": distributions_delta[visible_mask] / 1e6,
         "Net Cash Flow": net_cf[visible_mask] / 1e6,
         "Cumulative Net CF": cum_cf[visible_mask] / 1e6
     })
 
     fig = go.Figure()
-    fig.add_bar(x=df_chart["Year"], y=df_chart["Capital Calls"], name="Capital Call (Primary)", marker_color="#8B0000")
-    fig.add_bar(x=df_chart["Year"], y=df_chart["Distributions"], name="Distribution (Primary)", marker_color="#006400")
-    fig.add_trace(go.Scatter(x=df_chart["Year"], y=df_chart["Net Cash Flow"], name="Annual Net Cash Flow (Primary)", mode="lines+markers", line=dict(color="#FFA500", width=2)))
-    fig.add_trace(go.Scatter(x=df_chart["Year"], y=df_chart["Cumulative Net CF"], name="Cumulative Net CF (Primary)", mode="lines", line=dict(color="#1E90FF", width=3)))
+    fig.add_bar(x=df_chart["Year"], y=df_chart["Capital Calls"], name="Capital Call (Base)", marker_color="#8B0000")
+    if enable_compare:
+        fig.add_bar(x=df_chart["Year"], y=df_chart["Capital Calls Delta"], name="Capital Call (Delta)", marker_color="#FFA07A")
+    fig.add_bar(x=df_chart["Year"], y=df_chart["Distributions"], name="Distribution (Base)", marker_color="#006400")
+    if enable_compare:
+        fig.add_bar(x=df_chart["Year"], y=df_chart["Distributions Delta"], name="Distribution (Delta)", marker_color="#90EE90")
+    fig.add_trace(go.Scatter(x=df_chart["Year"], y=df_chart["Net Cash Flow"], name="Annual Net Cash Flow", mode="lines+markers", line=dict(color="#FFA500", width=2)))
+    fig.add_trace(go.Scatter(x=df_chart["Year"], y=df_chart["Cumulative Net CF"], name="Cumulative Net CF", mode="lines", line=dict(color="#1E90FF", width=3)))
 
     if enable_compare:
-        df_chart2 = pd.DataFrame({
-            "Year": range_mask[visible_mask],
-            "Capital Calls": cap2[visible_mask] / 1e6,
-            "Distributions": dist2[visible_mask] / 1e6,
-            "Net Cash Flow": net2[visible_mask] / 1e6,
-            "Cumulative Net CF": cum2[visible_mask] / 1e6
-        })
-        fig.add_bar(x=df_chart2["Year"], y=df_chart2["Capital Calls"], name="Capital Call (Compare)", marker_color="#FF9999", opacity=0.5)
-        fig.add_bar(x=df_chart2["Year"], y=df_chart2["Distributions"], name="Distribution (Compare)", marker_color="#90EE90", opacity=0.5)
-        fig.add_trace(go.Scatter(x=df_chart2["Year"], y=df_chart2["Net Cash Flow"], name="Annual Net Cash Flow (Compare)", mode="lines+markers", line=dict(color="#FFB347", width=2, dash="dot")))
-        fig.add_trace(go.Scatter(x=df_chart2["Year"], y=df_chart2["Cumulative Net CF"], name="Cumulative Net CF (Compare)", mode="lines", line=dict(color="#87CEFA", width=2, dash="dash")))
+        fig.add_trace(go.Scatter(x=range_mask[visible_mask], y=cum2[visible_mask]/1e6, name="Cumulative Net CF (Compare)", mode="lines", line=dict(color="#87CEFA", width=2, dash="dash")))
 
     fig.update_layout(
-        barmode="relative",
+        barmode="stack",
         xaxis_title="Year",
         yaxis_title="Cash Flow (USD Millions)",
         yaxis_tickformat="$,.0f",
