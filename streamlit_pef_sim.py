@@ -31,12 +31,6 @@ scenarios = load_assumptions()
 
 st.markdown("""
     <style>
-    section[data-testid="stSidebar"] div[role="slider"] > div:first-child {
-        background-color: navy !important;
-    }
-    .stSlider > div[data-baseweb="slider"] > div {
-        color: navy !important;
-    }
     .metric-container {
         display: flex;
         gap: 20px;
@@ -61,20 +55,12 @@ st.markdown("""
         font-weight: 600;
         color: #1a1a1a;
     }
-    .stNumberInput > div > div {
-        width: 100%;
-    }
-    hr.vertical-divider {
-        width: 1px;
-        background-color: #d8dee4;
-        margin: 0 30px;
-    }
     </style>
 """, unsafe_allow_html=True)
 
 st.title("PE Fund-of-Funds Return Simulator")
 
-left, right = st.columns([1, 0.05, 2.95])
+left, right = st.columns(2)
 
 with left:
     st.subheader("Strategy Inputs")
@@ -83,9 +69,6 @@ with left:
     step_up = st.number_input("Commitment Step-Up (%)", min_value=0, max_value=50, value=0, step=1) / 100
     num_funds = st.slider("Number of Funds", 1, 15, 1)
     scenario_choice = st.radio("Performance Scenario", ["Top Quartile", "Median Quartile", "Bottom Quartile"], index=0, horizontal=True)
-
-with right:
-    st.subheader("Key Metrics")
 
 scenario = scenarios[scenario_choice]
 horizon = (num_funds - 1) * 2 + 13
@@ -114,7 +97,7 @@ cum_cf = np.cumsum(net_cf)
 # Metrics
 paid_in = -np.sum(capital_calls)
 total_dists = np.sum(distributions)
-residual_total = residual_navs[-1]  # Use final point-in-time NAV
+residual_total = residual_navs[-1]
 tvpi = (total_dists + residual_total) / paid_in if paid_in else np.nan
 dpi = total_dists / paid_in if paid_in else np.nan
 net_irr = irr(net_cf)
@@ -124,6 +107,7 @@ cash_on_cash = (cum_cf[-1] + abs_max_net_out) / abs_max_net_out if paid_in else 
 net_out_pct = (abs(max_net_out) / commitment) * 100
 
 with right:
+    st.subheader("Key Metrics")
     st.markdown("<div class='metric-container'>", unsafe_allow_html=True)
     st.markdown(f"""
         <div class='metric-box'>
