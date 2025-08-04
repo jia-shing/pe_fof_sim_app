@@ -110,13 +110,13 @@ for i in range(num_funds):
         call_amt = scenario.loc["Capital Calls", f"Year {j+1}"] * fund_commitment
         dist_amt = scenario.loc["Distributions", f"Year {j+1}"] * fund_commitment
         nav_amt = scenario.loc["Residual NAV", f"Year {j+1}"] * fund_commitment
-        capital_calls[year] += -call_amt
+        capital_calls[year] += call_amt
         distributions[year] += dist_amt
         residual_navs[year] += nav_amt
         net_cf[year] += -call_amt + dist_amt
 
 cum_cf = np.cumsum(net_cf)
-paid_in = -np.sum(capital_calls)
+paid_in = np.sum(capital_calls)
 total_dists = np.sum(distributions)
 residual_total = residual_navs[-1]
 tvpi = (total_dists + residual_total) / paid_in if paid_in else np.nan
