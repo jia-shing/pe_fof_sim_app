@@ -56,6 +56,11 @@ st.markdown("""
         font-weight: bold;
         color: #3f51b5;
     }
+    hr.divider {
+        border: none;
+        border-top: 1px solid #dee2e6;
+        margin: 1.5rem 0 1rem 0;
+    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -75,6 +80,8 @@ with col1:
     step_up = st.number_input("Commitment Step-Up (%)", min_value=0, max_value=50, value=0, step=1) / 100
     num_funds = st.slider("Number of Funds", 1, 15, 1)
     scenario_choice = st.radio("Performance Scenario", ["Top Quartile", "Median Quartile", "Bottom Quartile"], index=0, horizontal=False)
+
+st.markdown("<hr class='divider'>", unsafe_allow_html=True)
 
 scenario = scenarios[scenario_choice]
 horizon = (num_funds - 1) * 2 + 13
@@ -116,24 +123,24 @@ with col2:
 
     metrics_html = f"""
     <div class='metric-container'>
-      <div class='metric-box' title='Total Value to Paid-In Capital'>
+      <div class='metric-box'>
         <div class='metric-label'>Net TVPI</div>
         <div class='metric-value'>{tvpi:.2f}x</div>
       </div>
-      <div class='metric-box' title='Distributions to Paid-In Capital'>
+      <div class='metric-box'>
         <div class='metric-label'>Net DPI</div>
         <div class='metric-value'>{dpi:.2f}x</div>
       </div>
-      <div class='metric-box' title='Internal Rate of Return'>
+      <div class='metric-box'>
         <div class='metric-label'>Net IRR</div>
         <div class='metric-value'>{net_irr * 100:.1f}%</div>
       </div>
-      <div class='metric-box' title='Cumulative Net Cash Returned'>
-        <div class='metric-label'>Cash-on-Cash Multiple</div>
+      <div class='metric-box' title='Compares total net cash returned (including NAV) to maximum capital outlay over time.'>
+        <div class='metric-label'>Cash-on-Cash Multiple ℹ️</div>
         <div class='metric-value'>{cash_on_cash:.2f}x</div>
       </div>
-      <div class='metric-box' title='Maximum Net Capital Outlay'>
-        <div class='metric-label'>Max Net Cash Out</div>
+      <div class='metric-box' title='The peak negative exposure faced by the investor (i.e. bottom of J-Curve), as a percentage of commitment.'>
+        <div class='metric-label'>Max Net Cash Out ℹ️</div>
         <div class='metric-value'>-${abs(max_net_out)/1e6:.1f}M ({net_out_pct:.0f}%)</div>
       </div>
     </div>
@@ -166,6 +173,18 @@ with col2:
         hovermode="x unified"
     )
     st.plotly_chart(fig, use_container_width=True)
+
+    st.markdown("<hr class='divider'>", unsafe_allow_html=True)
+
+    if st.checkbox("Show Year-by-Year Table"):
+        table_df = pd.DataFrame({
+            "Year": list(range(1, len(net_cf)+1)),
+            "Capital Calls": [f"(${x/1e6:.1f})" if x < 0 else f"{x/1e6:.1f}" for x in capital_calls],
+            "Distributions": [f"(${x/1e6:.1f})" if x < 0 else f"{x/1e6:.1f}" for x in distributions],
+            "Net Cash Flow": [f"(${x/1e6:.1f})" if x < 0 else f"{x/1e6:.1f}" for x in net_cf],
+            "Cumulative Net CF": [f"(${x/1e6:.1f})" if x < 0 else f"{x/1e6:.1f}" for x in cum_cf]
+        })
+        st.dataframe(table_df, use_container_width=True)
 
     raw_df = pd.DataFrame({
         "Year": list(range(1, len(net_cf)+1)),
