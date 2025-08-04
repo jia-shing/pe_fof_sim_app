@@ -236,3 +236,24 @@ with col2:
         hovermode="x unified"
     )
     st.plotly_chart(fig, use_container_width=True)
+
+    st.markdown("<hr class='divider'>", unsafe_allow_html=True)
+
+    with st.expander("Show Year-by-Year Table"):
+        table_df = pd.DataFrame({
+            "Year": list(range(1, len(net_cf)+1)),
+            "Capital Calls": [f"(${x/1e6:.1f})" if x < 0 else f"{x/1e6:.1f}" for x in capital_calls],
+            "Distributions": [f"(${x/1e6:.1f})" if x < 0 else f"{x/1e6:.1f}" for x in distributions],
+            "Net Cash Flow": [f"(${x/1e6:.1f})" if x < 0 else f"{x/1e6:.1f}" for x in net_cf],
+            "Cumulative Net CF": [f"(${x/1e6:.1f})" if x < 0 else f"{x/1e6:.1f}" for x in cum_cf]
+        })
+        st.dataframe(table_df, use_container_width=True)
+
+    raw_df = pd.DataFrame({
+        "Year": list(range(1, len(net_cf)+1)),
+        "Capital Calls": capital_calls,
+        "Distributions": distributions,
+        "Net Cash Flow": net_cf,
+        "Cumulative Net CF": cum_cf
+    })
+    st.download_button("Download Cash Flow CSV", raw_df.to_csv(index=False), file_name="cashflows.csv")
