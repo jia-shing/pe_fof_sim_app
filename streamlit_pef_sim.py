@@ -116,7 +116,7 @@ for i in range(num_funds):
         net_cf[year] += call_amt + dist_amt
 
 cum_cf = np.cumsum(net_cf)
-paid_in = np.sum(capital_calls)
+paid_in = -np.sum(capital_calls)
 total_dists = np.sum(distributions)
 residual_total = residual_navs[-1]
 tvpi = (total_dists + residual_total) / paid_in if paid_in else np.nan
