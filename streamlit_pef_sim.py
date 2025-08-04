@@ -67,7 +67,7 @@ with col1:
 
 # Right Panel – Metrics + Graph
 with col2:
-    st.subheader("Key Metrics")
+    st.markdown("""<div style='font-size: 1.25rem; font-weight: 600; margin-bottom: 0px;'>Key Metrics</div>""", unsafe_allow_html=True)
 
     scenario = scenarios[scenario_choice]
 horizon = (num_funds - 1) * 2 + 13
