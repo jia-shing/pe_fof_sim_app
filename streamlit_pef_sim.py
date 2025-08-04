@@ -110,10 +110,10 @@ for i in range(num_funds):
         call_amt = scenario.loc["Capital Calls", f"Year {j+1}"] * fund_commitment
         dist_amt = scenario.loc["Distributions", f"Year {j+1}"] * fund_commitment
         nav_amt = scenario.loc["Residual NAV", f"Year {j+1}"] * fund_commitment
-        capital_calls[year] += call_amt
+        capital_calls[year] += -call_amt
         distributions[year] += dist_amt
         residual_navs[year] += nav_amt
-        net_cf[year] += call_amt + dist_amt
+        net_cf[year] += -call_amt + dist_amt
 
 cum_cf = np.cumsum(net_cf)
 paid_in = -np.sum(capital_calls)
@@ -144,11 +144,14 @@ if enable_compare:
             year = start_year + j
             if year >= horizon:
                 break
-            cap2[year] += scenario_2.loc["Capital Calls", f"Year {j+1}"] * fund_commit
-            dist2[year] += scenario_2.loc["Distributions", f"Year {j+1}"] * fund_commit
+            call_amt2 = scenario_2.loc["Capital Calls", f"Year {j+1}"] * fund_commit
+            dist_amt2 = scenario_2.loc["Distributions", f"Year {j+1}"] * fund_commit
+            cap2[year] += -call_amt2
+            dist2[year] += dist_amt2
             nav2[year] += scenario_2.loc["Residual NAV", f"Year {j+1}"] * fund_commit
-            net2[year] += cap2[year] + dist2[year]
+            net2[year] += -call_amt2 + dist_amt2
     cum2 = np.cumsum(net2)
+    net_flow_compare = net2
 
 # Year Filter
 min_year = 1
@@ -187,11 +190,10 @@ with col2:
     """
     st.markdown(metrics_html, unsafe_allow_html=True)
 
-    # Comparison delta stacking for bar charts
     capital_calls_base = np.minimum(capital_calls, cap2) if enable_compare else capital_calls
-    capital_calls_delta = (np.maximum(capital_calls, cap2) - np.minimum(capital_calls, cap2)) if enable_compare else np.zeros_like(capital_calls)
+    capital_calls_delta = (np.maximum(capital_calls, cap2) - capital_calls_base) if enable_compare else np.zeros_like(capital_calls)
     distributions_base = np.minimum(distributions, dist2) if enable_compare else distributions
-    distributions_delta = (np.maximum(distributions, dist2) - np.minimum(distributions, dist2)) if enable_compare else np.zeros_like(distributions)
+    distributions_delta = (np.maximum(distributions, dist2) - distributions_base) if enable_compare else np.zeros_like(distributions)
 
     df_chart = pd.DataFrame({
         "Year": range_mask[visible_mask],
@@ -200,7 +202,9 @@ with col2:
         "Capital Calls Delta": capital_calls_delta[visible_mask] / 1e6,
         "Distributions Delta": distributions_delta[visible_mask] / 1e6,
         "Net Cash Flow": net_cf[visible_mask] / 1e6,
-        "Cumulative Net CF": cum_cf[visible_mask] / 1e6
+        "Net CF Compare": net_flow_compare[visible_mask] / 1e6 if enable_compare else np.nan,
+        "Cumulative Net CF": cum_cf[visible_mask] / 1e6,
+        "Cumulative Net CF (Compare)": cum2[visible_mask] / 1e6 if enable_compare else np.nan
     })
 
     fig = go.Figure()
@@ -210,14 +214,17 @@ with col2:
     fig.add_bar(x=df_chart["Year"], y=df_chart["Distributions"], name="Distribution (Base)", marker_color="#006400")
     if enable_compare:
         fig.add_bar(x=df_chart["Year"], y=df_chart["Distributions Delta"], name="Distribution (Delta)", marker_color="#90EE90")
-    fig.add_trace(go.Scatter(x=df_chart["Year"], y=df_chart["Net Cash Flow"], name="Annual Net Cash Flow", mode="lines+markers", line=dict(color="#FFA500", width=2)))
-    fig.add_trace(go.Scatter(x=df_chart["Year"], y=df_chart["Cumulative Net CF"], name="Cumulative Net CF", mode="lines", line=dict(color="#1E90FF", width=3)))
 
+    fig.add_trace(go.Scatter(x=df_chart["Year"], y=df_chart["Net Cash Flow"], name="Annual Net Cash Flow", mode="lines+markers", line=dict(color="#FFA500", width=2)))
     if enable_compare:
-        fig.add_trace(go.Scatter(x=range_mask[visible_mask], y=cum2[visible_mask]/1e6, name="Cumulative Net CF (Compare)", mode="lines", line=dict(color="#87CEFA", width=2, dash="dash")))
+        fig.add_trace(go.Scatter(x=df_chart["Year"], y=df_chart["Net CF Compare"], name="Annual Net Cash Flow (Compare)", mode="lines+markers", line=dict(color="#FFD580", width=2, dash="dot")))
+
+    fig.add_trace(go.Scatter(x=df_chart["Year"], y=df_chart["Cumulative Net CF"], name="Cumulative Net CF", mode="lines", line=dict(color="#1E90FF", width=3)))
+    if enable_compare:
+        fig.add_trace(go.Scatter(x=df_chart["Year"], y=df_chart["Cumulative Net CF (Compare)"], name="Cumulative Net CF (Compare)", mode="lines", line=dict(color="#87CEFA", width=2, dash="dash")))
 
     fig.update_layout(
-        barmode="stack",
+        barmode="relative",
         xaxis_title="Year",
         yaxis_title="Cash Flow (USD Millions)",
         yaxis_tickformat="$,.0f",
