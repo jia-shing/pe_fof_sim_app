@@ -32,26 +32,28 @@ st.markdown("""
     <style>
     .metric-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 20px;
-        background-color: #f5faff;
-        padding: 20px;
-        border-radius: 10px;
-        margin-top: 5px;
-        margin-bottom: 0px;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 16px;
+        margin-top: 10px;
+        margin-bottom: 0;
     }
     .metric-tile {
+        background-color: #f8f9fa;
+        border-radius: 10px;
+        padding: 16px;
         text-align: center;
-        padding: 10px;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
     }
     .metric-label {
         font-size: 0.9rem;
+        font-weight: 500;
         color: #6c757d;
     }
     .metric-value {
-        font-size: 1.4rem;
-        font-weight: 600;
-        color: #1a1a1a;
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: #3f51b5;
+        margin-top: 4px;
     }
     .form-container {
         display: flex;
@@ -59,7 +61,7 @@ st.markdown("""
         justify-content: space-between;
         align-items: flex-start;
         gap: 40px;
-        margin-bottom: 20px;
+        margin-bottom: 15px;
     }
     </style>
 """, unsafe_allow_html=True)
