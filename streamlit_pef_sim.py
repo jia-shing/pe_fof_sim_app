@@ -53,10 +53,15 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
+# Main Header
+st.markdown("""
+    <h1 style='font-size: 2.2rem; margin-bottom: 1.5rem;'>PE Fund-of-Funds Return Simulator</h1>
+""", unsafe_allow_html=True)
+
 # Layout with Streamlit columns
 col1, col2 = st.columns([1, 3], gap="large")
 
-# Left Panel – Inputs + Metrics
+# Left Panel – Inputs
 with col1:
     st.subheader("Commitment Inputs")
     commitment_millions = st.number_input("Initial Commitment (USD millions)", min_value=1, max_value=2000, value=100, step=5, format="%d")
@@ -64,9 +69,6 @@ with col1:
     step_up = st.number_input("Commitment Step-Up (%)", min_value=0, max_value=50, value=0, step=1) / 100
     num_funds = st.slider("Number of Funds", 1, 15, 1)
     scenario_choice = st.radio("Performance Scenario", ["Top Quartile", "Median Quartile", "Bottom Quartile"], index=0, horizontal=False)
-
-    # Metrics will be shown after inputs
-    st.markdown("""<div style='font-size: 1.25rem; font-weight: 600; margin-top: 24px;'>Key Metrics</div>""", unsafe_allow_html=True)
 
 scenario = scenarios[scenario_choice]
 horizon = (num_funds - 1) * 2 + 13
@@ -102,36 +104,36 @@ abs_max_net_out = abs(max_net_out)
 cash_on_cash = (cum_cf[-1] + abs_max_net_out) / abs_max_net_out if paid_in else np.nan
 net_out_pct = (abs(max_net_out) / commitment) * 100
 
-# Render metrics below inputs (still in col1)
-metrics_html = f"""
-<div style='display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-start; margin-top: 0; max-width: 640px;'>
-  <div class='metric-box' title='Total Value to Paid-In Capital'>
-    <div class='metric-label'>Net TVPI</div>
-    <div class='metric-value'>{tvpi:.2f}x</div>
-  </div>
-  <div class='metric-box' title='Distributions to Paid-In Capital'>
-    <div class='metric-label'>Net DPI</div>
-    <div class='metric-value'>{dpi:.2f}x</div>
-  </div>
-  <div class='metric-box' title='Internal Rate of Return'>
-    <div class='metric-label'>Net IRR</div>
-    <div class='metric-value'>{net_irr * 100:.1f}%</div>
-  </div>
-  <div class='metric-box' title='Cumulative Net Cash Returned'>
-    <div class='metric-label'>Cash-on-Cash Multiple</div>
-    <div class='metric-value'>{cash_on_cash:.2f}x</div>
-  </div>
-  <div class='metric-box' title='Maximum Net Capital Outlay'>
-    <div class='metric-label'>Max Net Cash Out</div>
-    <div class='metric-value'>-${abs(max_net_out)/1e6:.1f}M ({net_out_pct:.0f}%)</div>
-  </div>
-</div>
-"""
-st.markdown(metrics_html, unsafe_allow_html=True)
-
-# Right Panel – Chart
+# Right Panel – Chart and Key Metrics
 with col2:
     st.subheader("Illustrative Cashflows and Net Returns to Investor")
+
+    metrics_html = f"""
+    <div style='display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-start; margin-top: 0; margin-bottom: 1rem; max-width: 700px;'>
+      <div class='metric-box' title='Total Value to Paid-In Capital'>
+        <div class='metric-label'>Net TVPI</div>
+        <div class='metric-value'>{tvpi:.2f}x</div>
+      </div>
+      <div class='metric-box' title='Distributions to Paid-In Capital'>
+        <div class='metric-label'>Net DPI</div>
+        <div class='metric-value'>{dpi:.2f}x</div>
+      </div>
+      <div class='metric-box' title='Internal Rate of Return'>
+        <div class='metric-label'>Net IRR</div>
+        <div class='metric-value'>{net_irr * 100:.1f}%</div>
+      </div>
+      <div class='metric-box' title='Cumulative Net Cash Returned'>
+        <div class='metric-label'>Cash-on-Cash Multiple</div>
+        <div class='metric-value'>{cash_on_cash:.2f}x</div>
+      </div>
+      <div class='metric-box' title='Maximum Net Capital Outlay'>
+        <div class='metric-label'>Max Net Cash Out</div>
+        <div class='metric-value'>-${abs(max_net_out)/1e6:.1f}M ({net_out_pct:.0f}%)</div>
+      </div>
+    </div>
+    """
+    st.markdown(metrics_html, unsafe_allow_html=True)
+
     df_chart = pd.DataFrame({
         "Year": list(range(1, len(net_cf)+1)),
         "Capital Calls": capital_calls / 1e6,
@@ -159,7 +161,6 @@ with col2:
     )
     st.plotly_chart(fig, use_container_width=True)
 
-    # Download CSV
     raw_df = pd.DataFrame({
         "Year": list(range(1, len(net_cf)+1)),
         "Capital Calls": capital_calls,
