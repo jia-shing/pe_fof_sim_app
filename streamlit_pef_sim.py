@@ -135,13 +135,13 @@ with col2:
         <div class='metric-label'>Net IRR</div>
         <div class='metric-value'>{net_irr * 100:.1f}%</div>
       </div>
-      <div class='metric-box' title='Compares total net cash returned (including NAV) to maximum capital outlay over time.'>
-        <div class='metric-label'>Cash-on-Cash Multiple ℹ️</div>
-        <div class='metric-value'>{cash_on_cash:.2f}x</div>
+      <div class='metric-box'>
+        <div class='metric-label'>Cash-on-Cash Multiple</div>
+        <div class='metric-value' title='Compares total net cash returned (including NAV) to maximum capital outlay over time.'>{cash_on_cash:.2f}x</div>
       </div>
-      <div class='metric-box' title='The peak negative exposure faced by the investor (i.e. bottom of J-Curve), as a percentage of commitment.'>
-        <div class='metric-label'>Max Net Cash Out ℹ️</div>
-        <div class='metric-value'>-${abs(max_net_out)/1e6:.1f}M ({net_out_pct:.0f}%)</div>
+      <div class='metric-box'>
+        <div class='metric-label'>Max Net Cash Out</div>
+        <div class='metric-value' title='The peak negative exposure faced by the investor (i.e. bottom of J-Curve), as a percentage of commitment.'>-${abs(max_net_out)/1e6:.1f}M ({net_out_pct:.0f}%)</div>
       </div>
     </div>
     """
@@ -156,10 +156,10 @@ with col2:
     })
 
     fig = go.Figure()
-    fig.add_bar(x=df_chart["Year"], y=df_chart["Capital Calls"], name="Capital Call", marker_color="#8B0000")
-    fig.add_bar(x=df_chart["Year"], y=df_chart["Distributions"], name="Distribution", marker_color="#006400")
-    fig.add_trace(go.Scatter(x=df_chart["Year"], y=df_chart["Net Cash Flow"], name="Annual Net Cash Flow", mode="lines+markers", line=dict(color="#FFA500", width=2)))
-    fig.add_trace(go.Scatter(x=df_chart["Year"], y=df_chart["Cumulative Net CF"], name="Cumulative Net CF (J-Curve)", mode="lines", line=dict(color="#1E90FF", width=3)))
+    fig.add_bar(x=df_chart["Year"], y=df_chart["Capital Calls"], name="Capital Call (Primary)", marker_color="#8B0000")
+    fig.add_bar(x=df_chart["Year"], y=df_chart["Distributions"], name="Distribution (Primary)", marker_color="#006400")
+    fig.add_trace(go.Scatter(x=df_chart["Year"], y=df_chart["Net Cash Flow"], name="Annual Net Cash Flow (Primary)", mode="lines+markers", line=dict(color="#FFA500", width=2)))
+    fig.add_trace(go.Scatter(x=df_chart["Year"], y=df_chart["Cumulative Net CF"], name="Cumulative Net CF (Primary)", mode="lines", line=dict(color="#1E90FF", width=3)))
     fig.update_layout(
         barmode="relative",
         xaxis_title="Year",
@@ -176,7 +176,7 @@ with col2:
 
     st.markdown("<hr class='divider'>", unsafe_allow_html=True)
 
-    if st.checkbox("Show Year-by-Year Table"):
+    with st.expander("Show Year-by-Year Table"):
         table_df = pd.DataFrame({
             "Year": list(range(1, len(net_cf)+1)),
             "Capital Calls": [f"(${x/1e6:.1f})" if x < 0 else f"{x/1e6:.1f}" for x in capital_calls],
