@@ -113,7 +113,7 @@ for i in range(num_funds):
         capital_calls[year] += call_amt
         distributions[year] += dist_amt
         residual_navs[year] += nav_amt
-        net_cf[year] += -call_amt + dist_amt
+        net_cf[year] += call_amt + dist_amt
 
 cum_cf = np.cumsum(net_cf)
 paid_in = np.sum(capital_calls)
