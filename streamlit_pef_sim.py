@@ -41,19 +41,25 @@ st.markdown("""
         background-color: #f8f9fa;
         border-radius: 10px;
         padding: 16px;
-        text-align: center;
+        text-align: left;
         box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .metric-tile:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
     }
     .metric-label {
         font-size: 0.9rem;
         font-weight: 500;
         color: #6c757d;
+        margin-bottom: 6px;
     }
     .metric-value {
         font-size: 1.3rem;
         font-weight: 700;
         color: #3f51b5;
-        margin-top: 4px;
+        text-align: right;
     }
     .form-container {
         display: flex;
@@ -65,10 +71,6 @@ st.markdown("""
     }
     </style>
 """, unsafe_allow_html=True)
-
-st.title("PE Fund-of-Funds Return Simulator")
-
-st.markdown("<div class='form-container'>", unsafe_allow_html=True)
 
 col1, col2 = st.columns([1, 2], gap="large")
 
