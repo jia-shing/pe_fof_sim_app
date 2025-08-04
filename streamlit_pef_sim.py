@@ -108,7 +108,7 @@ dpi = total_dists / paid_in if paid_in else np.nan
 net_irr = irr(net_cf)
 max_net_out = cum_cf.min()
 abs_max_net_out = abs(max_net_out)
-cash_on_cash = (paid_in + abs_max_net_out) / paid_in if paid_in else np.nan
+cash_on_cash = (cum_cf[-1] + abs_max_net_out) / abs_max_net_out if paid_in else np.nan
 net_out_pct = (abs(max_net_out) / commitment) * 100
 
 with right:
