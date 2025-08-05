@@ -82,7 +82,9 @@ with col1:
     scenario_choice = st.radio("Performance Scenario", ["Top Quartile", "Median Quartile", "Bottom Quartile"], index=0, horizontal=False)
     scenario = scenarios[scenario_choice]
     horizon = (num_funds - 1) * 2 + 13
-    year_range = st.slider("Display Year Range", min_value=1, max_value=horizon, value=(1, horizon), key="display_year_range_slider")
+    st.markdown("Display Year Range")
+    end_year = st.slider("Select End Year", min_value=1, max_value=horizon, value=horizon, key="end_year_slider")
+    year_range = (1, end_year)
     use_point_in_time = st.toggle("Show Point-in-Time Metrics")
     enable_compare = st.checkbox("Enable Scenario Comparison")
 
